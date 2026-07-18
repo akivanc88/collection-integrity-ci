@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.10.4"
+
+      - name: Install dependencies from lockfile
+        run: uv sync --locked
+
+      - name: Lint (ruff)
+        run: uv run ruff check .
+
+      - name: Format check (ruff)
+        run: uv run ruff format --check .
+
+      - name: Type check (mypy)
+        run: uv run mypy src
+
+      - name: Tests
+        run: uv run pytest
+
+      - name: Build package
+        run: uv build
+
+      - name: Sample collection scan (clean example, expect zero findings)
+        run: uv run collection-ci scan --objects-csv examples/clean/objects.csv --output-dir build/ci-scan
