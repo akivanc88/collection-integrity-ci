@@ -127,3 +127,39 @@ keep changing the ingestion signature; then add `CORE002_REQUIRED_FIELD_MISSING`
 rule registry so a second rule doesn't require another CLI rewrite.
 
 ---
+
+## 2026-07-18 — Loop 3: Validation-loop specifications
+
+**Slice:** Specify the project's validation loops as first-class, self-verifying goals in
+`docs/VALIDATION_LOOPS.md` — ten loops (VL-01..VL-10) covering rule-engine correctness
+(benchmark closure, fingerprint determinism, baseline round-trip), robustness (threat-model
+adversarial fixtures, fuzz/property contract), quality gates (mutation testing of the test
+suite, coverage ratchet), and consistency (README-executes, progress audit,
+Definition-of-Done closure). Each loop declares what it validates, the earliest phase it can
+run, its loop body, a machine-checkable done condition, its evidence artifact, and how it is
+driven.
+
+**Files created/changed:** `docs/VALIDATION_LOOPS.md` (new), this entry, a pointer in
+`CLAUDE.md`.
+
+**Commands run:** documentation-only slice; full check suite re-run before commit to keep the
+commit-after-checks rule:
+
+```bash
+uv run ruff check .        # All checks passed!
+uv run ruff format --check .  # already formatted
+uv run mypy src            # Success: no issues found
+uv run pytest -q           # 13 passed
+```
+
+**Limitations:** These are specifications, not executions — the status column marks most loops
+`pending` on Phase 2/3 features (injector, mapping layer, baselines, coverage wiring). VL-02 is
+`partial` (single-rule stability test exists; the shuffled-input case and per-rule
+parametrization do not). VL-06 and VL-09 are runnable now but have not yet been run; their first
+executions should land as their own PROGRESS entries.
+
+**Next slice:** unchanged from Loop 2 (mapping layer + JSON adapter + CORE002 + rule registry).
+First loop executions to schedule after that lands: VL-06 against CORE001/CORE002, and VL-02's
+shuffled-input case.
+
+---

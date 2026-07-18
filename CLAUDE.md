@@ -69,7 +69,11 @@ uv run collection-ci --help      # CLI entry point
 
 Follow the loop in `BUILD_BRIEF.md` Section 26: inspect state, pick the smallest vertical slice,
 implement, run focused tests, run broader checks, inspect real output, update
-`docs/PROGRESS.md`, commit. Repeat. Section 26A additionally asks for loop-by-loop evidence
+`docs/PROGRESS.md`, commit. Repeat.
+
+Validation has its own dedicated loops with machine-checkable done conditions — see
+`docs/VALIDATION_LOOPS.md` (VL-01..VL-10). When a new rule lands, run VL-06 (mutation) against
+it and extend VL-02 (fingerprint determinism); execution evidence goes in `docs/PROGRESS.md`. Section 26A additionally asks for loop-by-loop evidence
 (commands + results) in `docs/PROGRESS.md`, since this repository is also intended as a
 loop-engineering case study (see `BUILD_BRIEF.md` Phase 7 and Section 26A) — do not fabricate
 that evidence; only record loops that actually happened.
