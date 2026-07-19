@@ -1,0 +1,45 @@
+name: Collection Integrity Demo
+
+# Demonstrates the tool scanning a deliberately flawed dataset. The scan is EXPECTED to find data
+# issues, so `--fail-on none` keeps this workflow green: intentional collection-data findings must
+# not be mistaken for a broken build. The findings are published as artifacts (and SARIF for code
+# scanning) for inspection.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  scan-dirty-example:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.10.4"
+
+      - name: Install dependencies from lockfile
+        run: uv sync --locked
+
+      - name: Scan the dirty example (findings expected; do not fail the job)
+        run: >
+          uv run collection-ci scan
+          --mapping examples/mappings/dirty.yaml
+          --output-dir build/demo
+          --fail-on none
+
+      - name: Upload findings and reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-findings
+          path: |
+            build/demo/report.html
+            build/demo/findings.json
+            build/demo/results.sarif

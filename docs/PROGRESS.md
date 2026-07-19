@@ -957,3 +957,39 @@ Slice M validation approved (accuracy + determinism + VL-06).
 
 **Next slice:** Slice N — full clean/dirty example datasets, end-to-end tests, a demo workflow
 (docs/DEMO.md), and the Phase 3 CI steps (SARIF validation, HTML artifact upload, benchmark).
+
+---
+
+## 2026-07-19 — Loop 23: Slice N — full examples + e2e + demo + Phase 3 CI
+
+**Slice:** Committed clean/dirty example datasets (250 objects), end-to-end tests, the demo guide,
+and Phase 3 CI steps.
+
+**Files created/changed:** `examples/generate.py` (deterministic; writes clean + dirty
+objects.csv with dates/status, two mappings with correct base_path, and
+`examples/expected/dirty_expected.json`); `examples/clean/objects.csv` (now 250 objects),
+`examples/dirty/objects.csv`, `examples/mappings/clean.yaml`, `dirty.yaml`; `docs/DEMO.md`
+(reproducible 7-step 5-minute demo); `.github/workflows/ci.yml` (sample scan now uses the clean
+mapping, added a benchmark step and an HTML-report artifact upload);
+`.github/workflows/collection-integrity-demo.yml` (new — scans the dirty example with
+`--fail-on none` so expected data findings don't fail software CI, uploads findings + SARIF).
+Tests: `tests/e2e/test_examples.py`.
+
+**Commands run and results:**
+
+```bash
+uv run python examples/generate.py   # clean(250) + dirty; expected 5 each of CORE001/002/DATE001/SCHEMA001
+uv run pytest -q                     # 167 passed
+uv run ruff check .; uv run mypy src # clean
+uv run collection-ci scan --mapping examples/mappings/clean.yaml ...  # 0 findings, exit 0
+uv run collection-ci scan --mapping examples/mappings/dirty.yaml ...  # 20 findings, exit 1
+```
+
+**Iteration 1 (e2e behavior):** the clean example scans to zero findings (exit 0); the dirty
+example scans to exactly the findings recorded in `dirty_expected.json` — 5 each of CORE001,
+CORE002, DATE001, SCHEMA001 over 250 objects — and exits 1. The e2e test asserts the dirty summary
+equals the expected manifest, so drift in either the data or the engine breaks CI.
+
+**Iteration 2 (determinism):** verify the examples regenerate byte-identically (next command).
+
+**Next:** confirm regeneration determinism, commit, then Phase 3 wrap-up.

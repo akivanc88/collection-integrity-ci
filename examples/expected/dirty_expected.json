@@ -1,0 +1,9 @@
+{
+  "expected_findings_by_rule": {
+    "CORE001_DUPLICATE_ACCESSION_NUMBER": 5,
+    "CORE002_REQUIRED_FIELD_MISSING": 5,
+    "DATE001_INVERTED_DATE_RANGE": 5,
+    "SCHEMA001_INVALID_FIELD_TYPE": 5
+  },
+  "object_count": 250
+}

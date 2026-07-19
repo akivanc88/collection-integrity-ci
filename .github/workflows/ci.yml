@@ -38,4 +38,14 @@ jobs:
         run: uv build
 
       - name: Sample collection scan (clean example, expect zero findings)
-        run: uv run collection-ci scan --objects-csv examples/clean/objects.csv --output-dir build/ci-scan
+        run: uv run collection-ci scan --mapping examples/mappings/clean.yaml --output-dir build/ci-scan
+
+      - name: Benchmark (must meet precision/recall target)
+        run: uv run collection-ci benchmark --output-dir build/benchmark
+
+      - name: Upload sample HTML report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sample-report
+          path: build/ci-scan/report.html

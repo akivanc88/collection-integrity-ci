@@ -1,7 +1,7 @@
 object_id,accession_number,title,object_name,department,publication_status,production_start_date,production_end_date
 OBJ-0001,1961.1.2-1,Still Life with Fruit and Flowers,Manuscript,Photography,private,1730-01-01,1752-01-01
 OBJ-0002,1962.1.3-2,Portrait of Fruit and Flowers,Textile,Ancient Art,internal,1871-01-01,1872-01-01
-OBJ-0003,1963.1.4-3,Still Life with Autumn Fields,Necklace,Textiles,public,1727-01-01,1730-01-01
+OBJ-0003,1963.1.4-3,Still Life with Autumn Fields,Necklace,Textiles,public,not-a-date,1730-01-01
 OBJ-0004,1964.1.5-4,Still Life with an Unknown Man,Necklace,European Paintings,internal,1657-01-01,1680-01-01
 OBJ-0005,1965.1.6-5,Composition in a Reclining Figure,Vase,European Paintings,private,1726-01-01,1750-01-01
 OBJ-0006,1966.1.7-6,Head of Fruit and Flowers,Manuscript,Asian Art,public,1652-01-01,1688-01-01
@@ -32,7 +32,7 @@ OBJ-0030,1990.4.1-30,Landscape near the Harbor,Bowl,Decorative Arts,public,1692-
 OBJ-0031,1991.4.2-31,Still Life with the Harbor,Photograph,Textiles,internal,1660-01-01,1675-01-01
 OBJ-0032,1992.4.3-32,View of a Young Woman,Painting,Textiles,internal,1776-01-01,1808-01-01
 OBJ-0033,1993.4.4-33,Landscape near a Seated Musician,Necklace,Textiles,internal,1868-01-01,1884-01-01
-OBJ-0034,1994.4.5-34,Portrait of an Unknown Man,Textile,Decorative Arts,private,1655-01-01,1692-01-01
+OBJ-0034,,Portrait of an Unknown Man,Textile,Decorative Arts,private,1655-01-01,1692-01-01
 OBJ-0035,1995.4.6-35,Head of a Reclining Figure,Bowl,Ancient Art,public,1788-01-01,1806-01-01
 OBJ-0036,1996.4.7-36,Figure of an Unknown Man,Painting,Asian Art,public,1821-01-01,1826-01-01
 OBJ-0037,1997.4.8-37,Composition in an Unknown Man,Drawing,Decorative Arts,private,1774-01-01,1806-01-01
@@ -40,7 +40,7 @@ OBJ-0038,1998.4.9-38,Landscape near Two Dancers,Drawing,European Paintings,inter
 OBJ-0039,1999.4.10-39,Still Life with Fruit and Flowers,Sculpture,Asian Art,public,1741-01-01,1775-01-01
 OBJ-0040,2000.5.1-40,View of the Harbor,Vase,Decorative Arts,internal,1759-01-01,1779-01-01
 OBJ-0041,2001.5.2-41,Study for an Unknown Man,Painting,Photography,private,1690-01-01,1695-01-01
-OBJ-0042,2002.5.3-42,Still Life with an Unknown Man,Bowl,Textiles,internal,1676-01-01,1695-01-01
+OBJ-0042,,Still Life with an Unknown Man,Bowl,Textiles,internal,1676-01-01,1695-01-01
 OBJ-0043,2003.5.4-43,Still Life with Blue and Gold,Necklace,Ancient Art,public,1682-01-01,1685-01-01
 OBJ-0044,2004.5.5-44,Figure of Autumn Fields,Drawing,Decorative Arts,public,1873-01-01,1898-01-01
 OBJ-0045,2005.5.6-45,Composition in a Reclining Figure,Coin,Asian Art,internal,1721-01-01,1759-01-01
@@ -54,9 +54,9 @@ OBJ-0052,2012.6.3-52,Composition in a Seated Musician,Vase,Photography,public,18
 OBJ-0053,2013.6.4-53,Portrait of a Young Woman,Mask,Decorative Arts,internal,1630-01-01,1656-01-01
 OBJ-0054,2014.6.5-54,Study for the Harbor,Print,Photography,private,1672-01-01,1701-01-01
 OBJ-0055,1960.6.6-55,Figure of Fruit and Flowers,Mask,European Paintings,internal,1686-01-01,1719-01-01
-OBJ-0056,1961.6.7-56,View of the Old Bridge,Mask,Photography,internal,1849-01-01,1869-01-01
-OBJ-0057,1962.6.8-57,Study for Autumn Fields,Painting,Asian Art,internal,1740-01-01,1758-01-01
-OBJ-0058,1963.6.9-58,Figure of a Reclining Figure,Drawing,Ancient Art,public,1806-01-01,1815-01-01
+OBJ-0056,1999.21.5-204,View of the Old Bridge,Mask,Photography,internal,1849-01-01,1869-01-01
+OBJ-0057,1962.6.8-57,Study for Autumn Fields,Painting,Asian Art,internal,1950-01-01,1900-01-01
+OBJ-0058,1985.25.6-245,Figure of a Reclining Figure,Drawing,Ancient Art,public,1806-01-01,1815-01-01
 OBJ-0059,1964.6.10-59,Study for a Reclining Figure,Mask,Asian Art,public,1793-01-01,1827-01-01
 OBJ-0060,1965.7.1-60,View of Blue and Gold,Mask,Ancient Art,public,1855-01-01,1876-01-01
 OBJ-0061,1966.7.2-61,Still Life with the Old Bridge,Vase,European Paintings,internal,1645-01-01,1676-01-01
@@ -67,23 +67,23 @@ OBJ-0065,1970.7.6-65,Head of Blue and Gold,Sculpture,European Paintings,private,
 OBJ-0066,1971.7.7-66,Portrait of the Old Bridge,Print,Ancient Art,internal,1743-01-01,1774-01-01
 OBJ-0067,1972.7.8-67,Study for Autumn Fields,Coin,Asian Art,private,1750-01-01,1771-01-01
 OBJ-0068,1973.7.9-68,Portrait of the Harbor,Photograph,Textiles,public,1691-01-01,1728-01-01
-OBJ-0069,1974.7.10-69,Portrait of the Harbor,Photograph,Decorative Arts,internal,1842-01-01,1877-01-01
+OBJ-0069,1974.7.10-69,Portrait of the Harbor,Photograph,Decorative Arts,internal,not-a-date,1877-01-01
 OBJ-0070,1975.8.1-70,Still Life with Blue and Gold,Mask,Photography,internal,1766-01-01,1783-01-01
 OBJ-0071,1976.8.2-71,Landscape near Blue and Gold,Mask,Textiles,private,1747-01-01,1779-01-01
-OBJ-0072,1977.8.3-72,Figure of a Young Woman,Textile,Decorative Arts,internal,1782-01-01,1804-01-01
+OBJ-0072,1977.8.3-72,Figure of a Young Woman,Textile,Decorative Arts,internal,not-a-date,1804-01-01
 OBJ-0073,1978.8.4-73,Landscape near a Reclining Figure,Necklace,Asian Art,internal,1776-01-01,1802-01-01
 OBJ-0074,1979.8.5-74,Still Life with Two Dancers,Vase,Ancient Art,internal,1688-01-01,1716-01-01
 OBJ-0075,1980.8.6-75,View of the Old Bridge,Necklace,Photography,public,1771-01-01,1804-01-01
-OBJ-0076,1981.8.7-76,Still Life with Autumn Fields,Painting,Asian Art,public,1871-01-01,1881-01-01
+OBJ-0076,1981.8.7-76,Still Life with Autumn Fields,,Asian Art,public,1871-01-01,1881-01-01
 OBJ-0077,1982.8.8-77,Figure of a Young Woman,Textile,Decorative Arts,internal,1785-01-01,1815-01-01
 OBJ-0078,1983.8.9-78,Composition in a Young Woman,Coin,Asian Art,public,1640-01-01,1666-01-01
-OBJ-0079,1984.8.10-79,Composition in a Seated Musician,Drawing,Textiles,private,1897-01-01,1930-01-01
+OBJ-0079,1984.8.10-79,Composition in a Seated Musician,Drawing,Textiles,private,1950-01-01,1900-01-01
 OBJ-0080,1985.9.1-80,Figure of the Old Bridge,Print,Decorative Arts,private,1815-01-01,1834-01-01
 OBJ-0081,1986.9.2-81,Portrait of the Old Bridge,Drawing,Decorative Arts,internal,1883-01-01,1923-01-01
 OBJ-0082,1987.9.3-82,Study for Blue and Gold,Drawing,European Paintings,public,1614-01-01,1626-01-01
-OBJ-0083,1988.9.4-83,Figure of the Old Bridge,Painting,Photography,private,1900-01-01,1928-01-01
+OBJ-0083,1974.18.10-179,Figure of the Old Bridge,Painting,Photography,private,1900-01-01,1928-01-01
 OBJ-0084,1989.9.5-84,Portrait of an Unknown Man,Painting,Asian Art,private,1692-01-01,1706-01-01
-OBJ-0085,1990.9.6-85,Portrait of Two Dancers,Vase,Photography,private,1692-01-01,1732-01-01
+OBJ-0085,1969.12.10-119,Portrait of Two Dancers,Vase,Photography,private,not-a-date,1732-01-01
 OBJ-0086,1991.9.7-86,Landscape near the Harbor,Mask,Asian Art,public,1621-01-01,1651-01-01
 OBJ-0087,1992.9.8-87,Landscape near the Old Bridge,Photograph,Decorative Arts,public,1684-01-01,1687-01-01
 OBJ-0088,1993.9.9-88,Still Life with a Seated Musician,Photograph,Photography,public,1656-01-01,1676-01-01
@@ -104,7 +104,7 @@ OBJ-0102,2007.11.3-102,View of Fruit and Flowers,Vase,Ancient Art,internal,1875-
 OBJ-0103,2008.11.4-103,Composition in Fruit and Flowers,Print,Ancient Art,private,1672-01-01,1682-01-01
 OBJ-0104,2009.11.5-104,Still Life with Fruit and Flowers,Print,Textiles,internal,1795-01-01,1831-01-01
 OBJ-0105,2010.11.6-105,Study for a Reclining Figure,Vase,European Paintings,private,1701-01-01,1709-01-01
-OBJ-0106,2011.11.7-106,Still Life with the Old Bridge,Sculpture,Ancient Art,private,1646-01-01,1668-01-01
+OBJ-0106,2011.11.7-106,Still Life with the Old Bridge,,Ancient Art,private,1646-01-01,1668-01-01
 OBJ-0107,2012.11.8-107,View of the Old Bridge,Necklace,Decorative Arts,public,1600-01-01,1624-01-01
 OBJ-0108,2013.11.9-108,View of Blue and Gold,Vase,Asian Art,private,1766-01-01,1802-01-01
 OBJ-0109,2014.11.10-109,Head of Two Dancers,Necklace,European Paintings,internal,1876-01-01,1885-01-01
@@ -129,7 +129,7 @@ OBJ-0127,1977.13.8-127,View of a Reclining Figure,Bowl,Textiles,public,1660-01-0
 OBJ-0128,1978.13.9-128,Composition in a Young Woman,Vase,European Paintings,private,1753-01-01,1771-01-01
 OBJ-0129,1979.13.10-129,Landscape near an Unknown Man,Mask,Ancient Art,internal,1772-01-01,1811-01-01
 OBJ-0130,1980.14.1-130,Still Life with Fruit and Flowers,Necklace,Textiles,internal,1871-01-01,1872-01-01
-OBJ-0131,1981.14.2-131,View of a Reclining Figure,Manuscript,Asian Art,private,1779-01-01,1802-01-01
+OBJ-0131,1981.14.2-131,View of a Reclining Figure,Manuscript,Asian Art,private,1950-01-01,1900-01-01
 OBJ-0132,1982.14.3-132,Portrait of the Old Bridge,Necklace,Textiles,public,1667-01-01,1669-01-01
 OBJ-0133,1983.14.4-133,Still Life with Autumn Fields,Necklace,Decorative Arts,internal,1729-01-01,1764-01-01
 OBJ-0134,1984.14.5-134,Study for Two Dancers,Drawing,Photography,public,1655-01-01,1689-01-01
@@ -137,8 +137,8 @@ OBJ-0135,1985.14.6-135,Figure of a Young Woman,Mask,Textiles,internal,1607-01-01
 OBJ-0136,1986.14.7-136,Figure of the Old Bridge,Painting,European Paintings,private,1894-01-01,1934-01-01
 OBJ-0137,1987.14.8-137,Figure of an Unknown Man,Print,Decorative Arts,internal,1846-01-01,1870-01-01
 OBJ-0138,1988.14.9-138,Study for a Young Woman,Sculpture,Photography,internal,1800-01-01,1812-01-01
-OBJ-0139,1989.14.10-139,Landscape near Autumn Fields,Textile,Decorative Arts,internal,1838-01-01,1842-01-01
-OBJ-0140,1990.15.1-140,Still Life with Blue and Gold,Bowl,Asian Art,private,1601-01-01,1628-01-01
+OBJ-0139,1989.14.10-139,Landscape near Autumn Fields,Textile,Decorative Arts,internal,not-a-date,1842-01-01
+OBJ-0140,1990.15.1-140,Still Life with Blue and Gold,Bowl,Asian Art,private,1950-01-01,1900-01-01
 OBJ-0141,1991.15.2-141,View of Fruit and Flowers,Bowl,Decorative Arts,internal,1746-01-01,1776-01-01
 OBJ-0142,1992.15.3-142,Composition in a Seated Musician,Sculpture,Textiles,internal,1673-01-01,1683-01-01
 OBJ-0143,1993.15.4-143,View of an Unknown Man,Mask,Ancient Art,internal,1881-01-01,1912-01-01
@@ -211,7 +211,7 @@ OBJ-0209,2004.21.10-209,Landscape near a Seated Musician,Drawing,Decorative Arts
 OBJ-0210,2005.22.1-210,Study for Fruit and Flowers,Sculpture,Decorative Arts,private,1805-01-01,1828-01-01
 OBJ-0211,2006.22.2-211,View of a Seated Musician,Bowl,Textiles,internal,1759-01-01,1770-01-01
 OBJ-0212,2007.22.3-212,Portrait of Blue and Gold,Necklace,European Paintings,public,1785-01-01,1803-01-01
-OBJ-0213,2008.22.4-213,Still Life with a Young Woman,Manuscript,Decorative Arts,public,1839-01-01,1849-01-01
+OBJ-0213,2008.22.4-213,Still Life with a Young Woman,Manuscript,Decorative Arts,public,1950-01-01,1900-01-01
 OBJ-0214,2009.22.5-214,Composition in the Old Bridge,Sculpture,Asian Art,public,1689-01-01,1702-01-01
 OBJ-0215,2010.22.6-215,Head of the Old Bridge,Drawing,Photography,public,1820-01-01,1837-01-01
 OBJ-0216,2011.22.7-216,View of a Reclining Figure,Photograph,Ancient Art,internal,1836-01-01,1839-01-01
@@ -237,7 +237,7 @@ OBJ-0235,1975.24.6-235,Head of a Reclining Figure,Manuscript,Asian Art,internal,
 OBJ-0236,1976.24.7-236,Portrait of a Young Woman,Mask,Asian Art,private,1829-01-01,1843-01-01
 OBJ-0237,1977.24.8-237,Portrait of a Reclining Figure,Drawing,Decorative Arts,internal,1659-01-01,1667-01-01
 OBJ-0238,1978.24.9-238,Head of Autumn Fields,Print,Decorative Arts,internal,1847-01-01,1852-01-01
-OBJ-0239,1979.24.10-239,Head of the Harbor,Manuscript,European Paintings,public,1806-01-01,1826-01-01
+OBJ-0239,,Head of the Harbor,Manuscript,European Paintings,public,1806-01-01,1826-01-01
 OBJ-0240,1980.25.1-240,View of a Seated Musician,Bowl,European Paintings,public,1666-01-01,1700-01-01
 OBJ-0241,1981.25.2-241,Head of Blue and Gold,Drawing,European Paintings,private,1841-01-01,1856-01-01
 OBJ-0242,1982.25.3-242,Landscape near the Old Bridge,Coin,Textiles,private,1643-01-01,1670-01-01
@@ -246,6 +246,6 @@ OBJ-0244,1984.25.5-244,Still Life with a Seated Musician,Vase,European Paintings
 OBJ-0245,1985.25.6-245,View of Fruit and Flowers,Photograph,Ancient Art,internal,1702-01-01,1720-01-01
 OBJ-0246,1986.25.7-246,Still Life with Autumn Fields,Coin,Textiles,internal,1650-01-01,1654-01-01
 OBJ-0247,1987.25.8-247,Still Life with Blue and Gold,Sculpture,Photography,private,1760-01-01,1784-01-01
-OBJ-0248,1988.25.9-248,Still Life with a Seated Musician,Necklace,Ancient Art,private,1600-01-01,1618-01-01
+OBJ-0248,2002.10.8-97,Still Life with a Seated Musician,Necklace,Ancient Art,private,1600-01-01,1618-01-01
 OBJ-0249,1989.25.10-249,View of the Old Bridge,Necklace,Decorative Arts,public,1667-01-01,1703-01-01
 OBJ-0250,1990.26.1-250,Figure of Autumn Fields,Bowl,Asian Art,private,1826-01-01,1835-01-01

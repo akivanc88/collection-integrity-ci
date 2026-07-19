@@ -1,0 +1,17 @@
+version: 1
+dataset:
+  name: example-clean
+  format: csv
+  base_path: ../clean
+entities:
+  objects:
+    file: objects.csv
+    primary_key: object_id
+    fields:
+      object_id: object_id
+      accession_number: accession_number
+      object_name: object_name
+      title: title
+      publication_status: publication_status
+      production_start_date: production_start_date
+      production_end_date: production_end_date
