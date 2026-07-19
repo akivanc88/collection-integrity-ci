@@ -52,15 +52,19 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
         if f.rule.id == "CORE002_REQUIRED_FIELD_MISSING"
     }
 
-    core001_expected = manifest.expected_core001_accessions()
-    core002_expected = manifest.expected_core002_keys()
+    ref001_found = {f.entity.id for f in findings if f.rule.id == "REF001_ORPHAN_MEDIA_OBJECT"}
 
     return {
         "CORE001_DUPLICATE_ACCESSION_NUMBER": _metrics(
-            "CORE001_DUPLICATE_ACCESSION_NUMBER", core001_found, core001_expected
+            "CORE001_DUPLICATE_ACCESSION_NUMBER",
+            core001_found,
+            manifest.expected_core001_accessions(),
         ),
         "CORE002_REQUIRED_FIELD_MISSING": _metrics(
-            "CORE002_REQUIRED_FIELD_MISSING", core002_found, core002_expected
+            "CORE002_REQUIRED_FIELD_MISSING", core002_found, manifest.expected_core002_keys()
+        ),
+        "REF001_ORPHAN_MEDIA_OBJECT": _metrics(
+            "REF001_ORPHAN_MEDIA_OBJECT", ref001_found, manifest.expected_ref001_media()
         ),
     }
 

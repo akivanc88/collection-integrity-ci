@@ -18,9 +18,9 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
-from collection_integrity.canonical.models import CollectionObject
+from collection_integrity.canonical.models import CollectionObject, MediaAsset
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
-from collection_integrity.ingestion.mapper import load_mapping, load_objects
+from collection_integrity.ingestion.mapper import has_entity, load_mapping, load_media, load_objects
 from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.core_rules import REQUIRABLE_OBJECT_FIELDS
@@ -87,13 +87,13 @@ def scan(
         raise typer.Exit(code=2)
 
     try:
-        objects = _load_objects(objects_csv, mapping)
+        objects, media = _load_entities(objects_csv, mapping)
     except (CsvIngestionError, IngestionError, FileNotFoundError, KeyError) as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
     registry = RuleRegistry.with_defaults()
-    ctx = RuleContext(objects=objects, required_fields=required_fields)
+    ctx = RuleContext(objects=objects, media=media, required_fields=required_fields)
     findings = registry.evaluate(ctx)
 
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -114,17 +114,23 @@ def scan(
     raise typer.Exit(code=0)
 
 
-def _load_objects(objects_csv: Path | None, mapping_path: Path | None) -> list[CollectionObject]:
+def _load_entities(
+    objects_csv: Path | None, mapping_path: Path | None
+) -> tuple[list[CollectionObject], list[MediaAsset]]:
+    """Load objects, and media too when the mapping defines a media entity."""
     if objects_csv is not None:
         if not objects_csv.exists():
             raise FileNotFoundError(f"Input file not found: {objects_csv}")
-        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem)
+        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), []
 
     assert mapping_path is not None  # guaranteed by the caller's exactly-one check
     if not mapping_path.exists():
         raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
     mapping = load_mapping(mapping_path)
-    return load_objects(mapping, base_dir=mapping_path.parent)
+    base = mapping_path.parent
+    objects = load_objects(mapping, base_dir=base)
+    media = load_media(mapping, base_dir=base) if has_entity(mapping, "media") else []
+    return objects, media
 
 
 def _print_console_summary(objects: list, findings: list) -> None:  # type: ignore[type-arg]

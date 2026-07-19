@@ -1,8 +1,8 @@
 """Canonical domain models with source provenance.
 
-See BUILD_BRIEF.md Section 9. Only `SourceRef` and `CollectionObject` are implemented so far;
-`MediaAsset`, `RightsRecord`, `LocationRecord`, and `AgentOrMaker` are tracked in
-docs/BACKLOG.md and will be added alongside the rules that need them (Phase 2).
+See BUILD_BRIEF.md Section 9. `SourceRef`, `CollectionObject`, and `MediaAsset` are implemented;
+`RightsRecord`, `LocationRecord`, and `AgentOrMaker` are tracked in docs/BACKLOG.md and added
+alongside the rules that need them (Phase 2).
 """
 
 from __future__ import annotations
@@ -48,4 +48,24 @@ class CollectionObject(BaseModel):
     rights_id: str | None = None
     media_ids: list[str] = Field(default_factory=list)
     publication_status: str | None = None
+    source_ref: SourceRef
+
+
+class MediaAsset(BaseModel):
+    """A canonical media record (image or other asset) linked to a collection object."""
+
+    model_config = ConfigDict(frozen=True)
+
+    media_id: str
+    object_id: str | None = None
+    path_or_url: str | None = None
+    media_type: str | None = None
+    mime_type: str | None = None
+    width: int | None = None
+    height: int | None = None
+    file_size: int | None = None
+    checksum: str | None = None
+    is_primary: bool | None = None
+    publication_status: str | None = None
+    rights_id: str | None = None
     source_ref: SourceRef

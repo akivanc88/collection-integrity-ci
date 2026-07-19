@@ -8,8 +8,9 @@ findings can be scored against ground truth. Injection is:
 - disjoint (no row receives more than one injected error, so a label maps to exactly one rule),
 - free of label leakage (no marker column is added; the manifest is stored separately).
 
-Only injectors for the currently implemented rules exist here (CORE001, CORE002). Injectors for
-the remaining Section 11 rules land alongside those rules.
+Injectors exist for the currently implemented rules (CORE001, CORE002 on the objects table;
+REF001 on the media table via `inject_orphan_media`). Injectors for the remaining Section 11 rules
+land alongside those rules.
 """
 
 from __future__ import annotations
@@ -49,6 +50,12 @@ class InjectionManifest:
             (e.entity_id, e.field)
             for e in self.errors
             if e.expected_rule_id == "CORE002_REQUIRED_FIELD_MISSING"
+        }
+
+    def expected_ref001_media(self) -> set[str]:
+        """media_ids a correct REF001 run must flag as orphaned."""
+        return {
+            e.entity_id for e in self.errors if e.expected_rule_id == "REF001_ORPHAN_MEDIA_OBJECT"
         }
 
 
@@ -118,3 +125,44 @@ def inject_errors(
         )
 
     return rows, manifest
+
+
+def inject_orphan_media(
+    clean_media: list[dict[str, str]],
+    valid_object_ids: set[str],
+    seed: int,
+    num_orphan: int = 3,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Repoint some media rows at non-existent object ids, returning corrupted rows + labels.
+
+    Non-mutating: the input list and its dicts are copied. Orphan target ids are synthesised to be
+    absent from `valid_object_ids`, so REF001 (and only REF001) should flag exactly these rows.
+    """
+    if num_orphan > len(clean_media):
+        raise ValueError(f"need at least {num_orphan} media rows, got {len(clean_media)}")
+
+    rows = copy.deepcopy(clean_media)
+    rng = random.Random(seed)
+    indices = list(range(len(rows)))
+    rng.shuffle(indices)
+
+    errors: list[InjectedError] = []
+    for n in range(num_orphan):
+        idx = indices[n]
+        before = rows[idx]["object_id"]
+        # A target id guaranteed not to exist among the real objects.
+        bogus = f"MISSING-OBJ-{n + 1}"
+        assert bogus not in valid_object_ids
+        rows[idx]["object_id"] = bogus
+        errors.append(
+            InjectedError(
+                error_id=f"ORPHAN-MEDIA-{n + 1}",
+                expected_rule_id="REF001_ORPHAN_MEDIA_OBJECT",
+                entity_type="media",
+                entity_id=rows[idx]["media_id"],
+                field="object_id",
+                before_value=before,
+                after_value=bogus,
+            )
+        )
+    return rows, errors

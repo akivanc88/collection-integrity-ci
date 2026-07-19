@@ -2,7 +2,12 @@ from pathlib import Path
 
 import pytest
 
-from collection_integrity.ingestion.mapper import load_mapping, load_objects
+from collection_integrity.ingestion.mapper import (
+    has_entity,
+    load_mapping,
+    load_media,
+    load_objects,
+)
 from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.registry import RuleRegistry
@@ -92,6 +97,18 @@ def test_invalid_json_array_raises(tmp_path: Path) -> None:
     # must be rejected as "not an array", distinct from the per-record "not a JSON object" check.
     with pytest.raises(IngestionError, match="expected a JSON array"):
         load_objects(mapping, base_dir=tmp_path)
+
+
+def test_load_media_maps_and_reports_entity_presence() -> None:
+    mapping = load_mapping(FIXTURES / "mapping_with_media.yaml")
+    assert has_entity(mapping, "media") is True
+    assert has_entity(mapping, "rights") is False
+
+    media = load_media(mapping, base_dir=FIXTURES)
+    by_id = {m.media_id: m for m in media}
+    assert by_id["IMG-1"].object_id == "A1"
+    assert by_id["IMG-1"].path_or_url == "media/IMG-1.jpg"
+    assert by_id["IMG-9"].object_id == "A9"
 
 
 def test_empty_mapped_object_id_raises(tmp_path: Path) -> None:

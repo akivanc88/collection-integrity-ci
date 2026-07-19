@@ -66,6 +66,9 @@ DEPARTMENTS = [
 # Column order for the objects table this generator emits.
 OBJECT_COLUMNS = ("object_id", "accession_number", "title", "object_name", "department")
 
+# Column order for the media table this generator emits.
+MEDIA_COLUMNS = ("media_id", "object_id", "path_or_url", "publication_status")
+
 
 def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
     """Generate `count` internally consistent object rows, deterministically from `seed`."""
@@ -88,4 +91,28 @@ def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
                 "department": rng.choice(DEPARTMENTS),
             }
         )
+    return rows
+
+
+def generate_clean_media(objects: list[dict[str, str]], seed: int) -> list[dict[str, str]]:
+    """Generate 1-2 media rows per object, each pointing at a valid object_id.
+
+    Deterministic from `seed`. Every media row's object_id references a real object, so a correct
+    REF001 finds no orphans in this output.
+    """
+    rng = random.Random(seed)
+    rows: list[dict[str, str]] = []
+    media_counter = 1
+    for obj in objects:
+        for _ in range(rng.randint(1, 2)):
+            mid = f"IMG-{media_counter:04d}"
+            rows.append(
+                {
+                    "media_id": mid,
+                    "object_id": obj["object_id"],
+                    "path_or_url": f"media/{mid}.jpg",
+                    "publication_status": rng.choice(["public", "internal", "private"]),
+                }
+            )
+            media_counter += 1
     return rows

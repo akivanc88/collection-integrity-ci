@@ -18,7 +18,7 @@ from collection_integrity.canonical.mappings import (
     FieldMapping,
     coerce_field_mapping,
 )
-from collection_integrity.canonical.models import CollectionObject, SourceRef
+from collection_integrity.canonical.models import CollectionObject, MediaAsset, SourceRef
 from collection_integrity.ingestion.readers import IngestionError, read_rows
 from collection_integrity.provenance import hash_record
 
@@ -37,6 +37,24 @@ SCALAR_OBJECT_FIELDS = {
     "publication_status",
 }
 LIST_OBJECT_FIELDS = {"media_ids", "maker_ids", "materials", "techniques"}
+
+SCALAR_MEDIA_FIELDS = {
+    "media_id",
+    "object_id",
+    "path_or_url",
+    "media_type",
+    "mime_type",
+    "width",
+    "height",
+    "file_size",
+    "checksum",
+    "is_primary",
+    "publication_status",
+    "rights_id",
+}
+
+# A mapped entity record: the canonical-name -> value dict plus its provenance.
+MappedRecord = tuple[dict[str, str | list[str]], SourceRef]
 
 
 def load_mapping(path: Path) -> DatasetMapping:
@@ -74,11 +92,21 @@ def _map_value(raw_fields: dict[str, str], mapping: FieldMapping) -> str | list[
     return _apply_transform(raw_fields.get(mapping.source, ""), mapping.transform)
 
 
-def load_objects(mapping: DatasetMapping, base_dir: Path) -> list[CollectionObject]:
-    """Load the `objects` entity described by `mapping` into canonical records."""
-    if "objects" not in mapping.entities:
-        raise IngestionError("mapping has no 'objects' entity")
-    entity = mapping.entities["objects"]
+def _load_entity_records(
+    mapping: DatasetMapping,
+    entity_name: str,
+    base_dir: Path,
+    scalar_fields: set[str],
+    list_fields: set[str],
+) -> list[MappedRecord]:
+    """Read an entity's file and apply its field mapping, keyed by the entity's primary key.
+
+    The primary key's mapped value must be non-empty for every record; an empty one is a fatal
+    ingestion error (a record with no identity cannot be referenced or reported on).
+    """
+    if entity_name not in mapping.entities:
+        raise IngestionError(f"mapping has no {entity_name!r} entity")
+    entity = mapping.entities[entity_name]
 
     base_path = Path(mapping.dataset.base_path)
     if not base_path.is_absolute():
@@ -87,57 +115,107 @@ def load_objects(mapping: DatasetMapping, base_dir: Path) -> list[CollectionObje
 
     records = read_rows(file_path, mapping.dataset.format)
 
-    objects: list[CollectionObject] = []
+    out: list[MappedRecord] = []
     for row_number, raw_fields in records:
         mapped: dict[str, str | list[str]] = {}
         for canonical, field_mapping in entity.fields.items():
             value = _map_value(raw_fields, field_mapping)
-            if canonical in SCALAR_OBJECT_FIELDS:
+            if canonical in scalar_fields:
                 text = value if isinstance(value, str) else ""
                 mapped[canonical] = text.strip()
-            elif canonical in LIST_OBJECT_FIELDS:
+            elif canonical in list_fields:
                 mapped[canonical] = value if isinstance(value, list) else []
 
-        object_id = str(mapped.get("object_id", "")).strip()
-        if not object_id:
-            raise IngestionError(f"{file_path}: record {row_number} has an empty mapped object_id")
+        key_value = str(mapped.get(entity.primary_key, "")).strip()
+        if not key_value:
+            raise IngestionError(
+                f"{file_path}: record {row_number} has an empty mapped {entity.primary_key}"
+            )
 
         source_ref = SourceRef(
             source_name=mapping.dataset.name,
             source_file=str(file_path),
-            source_record_id=object_id,
+            source_record_id=key_value,
             source_row_number=row_number,
             source_hash=hash_record(raw_fields),
             ingested_at=datetime.now(UTC),
             raw_fields=raw_fields,
         )
-        objects.append(_build_object(mapped, source_ref))
-    return objects
+        out.append((mapped, source_ref))
+    return out
+
+
+def load_objects(mapping: DatasetMapping, base_dir: Path) -> list[CollectionObject]:
+    """Load the `objects` entity described by `mapping` into canonical records."""
+    records = _load_entity_records(
+        mapping, "objects", base_dir, SCALAR_OBJECT_FIELDS, LIST_OBJECT_FIELDS
+    )
+    return [_build_object(mapped, ref) for mapped, ref in records]
+
+
+def load_media(mapping: DatasetMapping, base_dir: Path) -> list[MediaAsset]:
+    """Load the `media` entity described by `mapping` into canonical records."""
+    records = _load_entity_records(mapping, "media", base_dir, SCALAR_MEDIA_FIELDS, set())
+    return [_build_media(mapped, ref) for mapped, ref in records]
+
+
+def has_entity(mapping: DatasetMapping, entity_name: str) -> bool:
+    return entity_name in mapping.entities
+
+
+def _scalar(mapped: dict[str, str | list[str]], name: str) -> str | None:
+    value = mapped.get(name)
+    return value or None if isinstance(value, str) else None
+
+
+def _int(mapped: dict[str, str | list[str]], name: str) -> int | None:
+    value = mapped.get(name)
+    if not isinstance(value, str) or not value.strip():
+        return None
+    try:
+        return int(value.strip())
+    except ValueError:
+        # A non-integer here is a type problem for SCHEMA001 to report later; ingestion keeps the
+        # raw value in source_ref.raw_fields and leaves the canonical field unset.
+        return None
 
 
 def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> CollectionObject:
-    def scalar(name: str) -> str | None:
-        value = mapped.get(name)
-        return value or None if isinstance(value, str) else None
-
     def listing(name: str) -> list[str]:
         value = mapped.get(name)
         return value if isinstance(value, list) else []
 
     return CollectionObject(
         object_id=str(mapped["object_id"]),
-        accession_number=scalar("accession_number"),
-        title=scalar("title"),
-        object_name=scalar("object_name"),
-        description=scalar("description"),
-        department=scalar("department"),
-        culture=scalar("culture"),
-        current_location_id=scalar("current_location_id"),
-        rights_id=scalar("rights_id"),
-        publication_status=scalar("publication_status"),
+        accession_number=_scalar(mapped, "accession_number"),
+        title=_scalar(mapped, "title"),
+        object_name=_scalar(mapped, "object_name"),
+        description=_scalar(mapped, "description"),
+        department=_scalar(mapped, "department"),
+        culture=_scalar(mapped, "culture"),
+        current_location_id=_scalar(mapped, "current_location_id"),
+        rights_id=_scalar(mapped, "rights_id"),
+        publication_status=_scalar(mapped, "publication_status"),
         media_ids=listing("media_ids"),
         maker_ids=listing("maker_ids"),
         materials=listing("materials"),
         techniques=listing("techniques"),
+        source_ref=source_ref,
+    )
+
+
+def _build_media(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> MediaAsset:
+    return MediaAsset(
+        media_id=str(mapped["media_id"]),
+        object_id=_scalar(mapped, "object_id"),
+        path_or_url=_scalar(mapped, "path_or_url"),
+        media_type=_scalar(mapped, "media_type"),
+        mime_type=_scalar(mapped, "mime_type"),
+        width=_int(mapped, "width"),
+        height=_int(mapped, "height"),
+        file_size=_int(mapped, "file_size"),
+        checksum=_scalar(mapped, "checksum"),
+        publication_status=_scalar(mapped, "publication_status"),
+        rights_id=_scalar(mapped, "rights_id"),
         source_ref=source_ref,
     )

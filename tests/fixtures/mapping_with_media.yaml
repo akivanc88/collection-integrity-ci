@@ -1,0 +1,23 @@
+version: 1
+dataset:
+  name: mapping-with-media
+  format: csv
+  base_path: .
+
+entities:
+  objects:
+    file: mapping_objects.csv
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+
+  media:
+    file: mapping_media.csv
+    primary_key: media_id
+    fields:
+      media_id: mid
+      object_id: oid
+      path_or_url: path

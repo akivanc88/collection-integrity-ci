@@ -376,3 +376,48 @@ loop) validation approved.
 **Next slice:** REF001 (orphan media -> object reference), which requires adding the `MediaAsset`
 canonical model, multi-entity ingestion (a second mapped entity), and a matching injector so its
 accuracy can be measured on the synthetic dataset.
+
+---
+
+## 2026-07-18 — Loop 8: Slice C — multi-entity ingestion + MediaAsset + REF001
+
+**Slice:** New `/goal` — complete all remaining Phase 2 slices, validated on AI-generated data,
+>=2 iterations each. Slice C is first: multi-entity ingestion + `MediaAsset` model + REF001
+(orphan media -> object).
+
+**Files created/changed:**
+
+- `canonical/models.py` — added `MediaAsset`.
+- `ingestion/mapper.py` — extracted generic `_load_entity_records` (per-entity primary-key
+  emptiness check); added `load_media`, `has_entity`, int/scalar coercion (`_int` leaves a
+  non-integer unset for a future SCHEMA001 to report).
+- `rules/base.py` — `RuleContext` gained `media`.
+- `rules/reference_rules.py` (new) — `REF001_ORPHAN_MEDIA_OBJECT` (high). Media with no object_id
+  at all is deliberately not an orphan (required-field concern); only a present-but-unknown target
+  is flagged.
+- `rules/registry.py` — registered REF001.
+- `cli.py` — `_load_entities` returns objects + media; media loaded when the mapping defines it.
+- `benchmark/synthetic.py` — `generate_clean_media`; `benchmark/injectors.py` —
+  `inject_orphan_media` + `expected_ref001_media()`; `benchmark/metrics.py` — REF001 scoring.
+- Tests: `test_reference_rules.py`, `test_reference_accuracy.py`, extended `test_mapper.py`;
+  fixtures `mapping_media.csv`, `mapping_with_media.yaml`.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 55 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (23 source files)
+```
+
+**Iteration 1 (accuracy on AI data):** clean object+media pair yields no REF001; injecting 5
+orphan references and scoring against the manifest gives **precision = recall = 1.0** (TP 5).
+Orphan injection verified non-mutating.
+
+**Iteration 2 (VL-02):** extended the fingerprint-determinism harness to carry media (seeded with
+4 orphans) so REF001 is genuinely exercised; all three rules pass stable + shuffled (objects and
+media shuffled independently), plus a guard test asserting REF001 produces 4 findings so its
+cases can't pass trivially.
+
+**Next:** commit, then VL-06 mutation on the new ingestion/rule code (needs committed files for the
+git-checkout revert), recorded in the next loop.
