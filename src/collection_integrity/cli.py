@@ -1,11 +1,11 @@
 """Command-line interface.
 
 The `scan` command ingests objects either directly from a canonical-column CSV (--objects-csv) or
-through a configurable dataset-mapping YAML that describes an arbitrary CSV/JSON export (--mapping),
-then runs the enabled deterministic rules through the rule registry. This is an early Phase 2
-shape, not the full CLI specification in Section 13 — per-rule enable/disable via a ruleset file,
-multi-entity ingestion (media/rights/locations), and the other report formats are tracked in
-docs/BACKLOG.md.
+through a configurable dataset-mapping YAML that describes an arbitrary CSV/JSON export (--mapping,
+which can also define media/rights/locations/agents entities), runs the enabled deterministic rules
+through the rule registry, and can persist a run summary (--run-store). This is an early Phase 2
+shape, not the full CLI specification in Section 13 — per-rule enable/disable via a ruleset file and
+the CSV/HTML/SARIF/manifest report formats are tracked in docs/BACKLOG.md.
 """
 
 from __future__ import annotations
@@ -25,6 +25,7 @@ from collection_integrity.canonical.models import (
     MediaAsset,
     RightsRecord,
 )
+from collection_integrity.engine.run_store import RunStore, summarize
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
 from collection_integrity.ingestion.mapper import (
     has_entity,
@@ -91,6 +92,10 @@ def scan(
     min_image_height: Annotated[
         int, typer.Option(help="Minimum image height for MEDIA003 (0 disables).")
     ] = 0,
+    run_store: Annotated[
+        Path | None,
+        typer.Option(help="Persist this run's summary + fingerprints under this directory."),
+    ] = None,
 ) -> None:
     """Scan collection objects and report deterministic integrity findings.
 
@@ -148,6 +153,10 @@ def scan(
 
     _print_console_summary(objects, findings)
     console.print(f"\nWrote {len(findings)} finding(s) to [bold]{findings_path}[/bold]")
+
+    if run_store is not None:
+        record_path = RunStore(run_store).save(summarize(findings))
+        console.print(f"Recorded run to [bold]{record_path}[/bold]")
 
     if fail_on == "none":
         raise typer.Exit(code=0)

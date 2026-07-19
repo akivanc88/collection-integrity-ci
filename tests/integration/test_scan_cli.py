@@ -162,6 +162,32 @@ def test_scan_requires_exactly_one_input(tmp_path: Path) -> None:
     assert both.exit_code == 2
 
 
+def test_scan_persists_run_to_store(tmp_path: Path) -> None:
+    store_dir = tmp_path / "store"
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--objects-csv",
+            str(FIXTURES / "objects_duplicate_accession.csv"),
+            "--output-dir",
+            str(tmp_path / "scan"),
+            "--run-store",
+            str(store_dir),
+            "--fail-on",
+            "none",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    run_files = list((store_dir / "runs").glob("*.json"))
+    assert len(run_files) == 1
+    record = json.loads(run_files[0].read_text(encoding="utf-8"))
+    assert record["total_findings"] >= 1
+    assert "fingerprints" in record
+
+
 def test_scan_missing_input_file_exits_two(tmp_path: Path) -> None:
     result = runner.invoke(
         app,

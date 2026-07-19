@@ -693,3 +693,36 @@ RIGHTS001, DATE001/002, VOCAB001, MEDIA001/002/003/004).
 
 **Next slice:** Slice H — the run store (persist scan records/findings for history), the last
 remaining Phase 2 checklist item.
+
+---
+
+## 2026-07-18 — Loop 17: Slice H — run store (last Phase 2 item)
+
+**Slice:** Persist scan history so baselines / "what changed" become possible in Phase 3.
+
+**Files created/changed:** `engine/run_store.py` (new — `RunSummary`, `summarize` (severity counts
++ sorted fingerprints), `RunStore` with `save`/`list_runs`/`latest`; one JSON file per run;
+DuckDB deferred per BUILD_PLAN); `cli.py` (`--run-store` option persists the run after a scan).
+Tests: `test_run_store.py` (summarize counts, save/list roundtrip, reload-equal, empty store,
+fingerprint stability for identical findings), plus a CLI integration test that `--run-store`
+writes a record.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 133 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (31 source files)
+uv run collection-ci scan --objects-csv benchmarks/mini/objects_dirty.csv \
+  --run-store <dir> --fail-on none
+  # -> Recorded run: total 8, severity {critical:4, high:4}, 8 fingerprints
+```
+
+**Iteration 1 (build + unit validation):** roundtrip save/list/reload verified equal; the persisted
+record for the dirty benchmark has the expected 8 findings and severity split; a stability test
+confirms identical findings persist identical fingerprint sets (the property baselines will rely
+on).
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the run store. This completes the Phase 2 slice set (C-H).
