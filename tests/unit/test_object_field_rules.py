@@ -57,6 +57,32 @@ def test_schema001_flags_unparseable_date() -> None:
     assert findings[0].evidence[0].value == "notadate"
 
 
+def test_schema001_ignores_empty_values() -> None:
+    from collection_integrity.canonical.models import CollectionObject, SourceRef
+
+    # An empty production_start_date is missing, not a type error — SCHEMA001 must not flag it.
+    obj = CollectionObject(
+        object_id="OBJ-E",
+        source_ref=SourceRef(
+            source_name="t",
+            source_file="o.csv",
+            source_record_id="OBJ-E",
+            source_hash="x",
+            ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+            raw_fields={"production_start_date": "", "production_end_date": ""},
+        ),
+    )
+    ctx = RuleContext(
+        objects=[obj],
+        object_field_sources={
+            "production_start_date": "production_start_date",
+            "production_end_date": "production_end_date",
+        },
+    )
+    findings = InvalidFieldTypeRule().evaluate(ctx, severity="high")
+    assert findings == []
+
+
 def test_schema001_inactive_without_field_sources() -> None:
     ctx = _ctx()
     bare = RuleContext(objects=ctx.objects)  # no object_field_sources

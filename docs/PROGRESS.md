@@ -621,3 +621,25 @@ shuffled. Fixed a compose-order bug where `add_dates_and_status` had overwritten
 RIGHTS001 statuses — it now preserves an existing publication_status.
 
 **Next:** commit, then VL-06 mutation on DATE001/VOCAB001/SCHEMA001. Phase 2 rule count: 10 of ~15.
+
+---
+
+## 2026-07-18 — Loop 15: VL-06 mutation on Slice F found and closed one SCHEMA001 gap
+
+**Slice:** Mutation-test DATE001 + VOCAB001 + SCHEMA001 (Slice F's second validation).
+
+**Mutations tried (7):** DATE001 flip-comparison (killed), DATE001 weaken-severity (killed),
+VOCAB001 accept-everything (killed), VOCAB001 weaken-severity (killed), SCHEMA001 never-flag
+(killed), SCHEMA001 ignore-empty-guard (**SURVIVED**), SCHEMA001 weaken-severity (killed).
+
+The survivor was a real gap: no test asserted that an *empty* typed field is treated as missing
+rather than a type error. Dropping the `not raw` guard would flag empty dates. Added an in-memory
+test with empty production dates that must produce no SCHEMA001. Re-ran: **7/7 killed.**
+
+Slice F validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 10 of ~15
+(CORE001/002, REF001/002, RIGHTS001, LOC001/002, DATE001, VOCAB001, SCHEMA001).
+
+**Next slice:** Slice G — media-file rules MEDIA001 (local file missing), MEDIA002 (duplicate file
+hash), MEDIA003 (below minimum dimensions), MEDIA004 (unreadable image), plus DATE002 (agent
+lifespan conflict). MEDIA00x need real local image files and Pillow (a new dependency, allowed by
+the brief); DATE002 needs the AgentOrMaker entity.
