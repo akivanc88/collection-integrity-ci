@@ -44,6 +44,7 @@ from collection_integrity.ingestion.mapper import (
 )
 from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.reporting.csv_report import write_findings_csv
+from collection_integrity.reporting.html_report import write_html_report
 from collection_integrity.reporting.json_report import write_findings_json
 from collection_integrity.reporting.summary import write_summary_json
 from collection_integrity.rules.base import RuleContext
@@ -183,9 +184,11 @@ def scan(
         enabled_rules=[(r.rule.id, r.rule.version) for r in registry.enabled_rules()],
         findings=findings,
     )
+    manifest_dict = manifest_to_dict(manifest)
     (output_dir / "run_manifest.json").write_text(
-        json.dumps(manifest_to_dict(manifest), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+        json.dumps(manifest_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
+    write_html_report(findings, manifest_dict, input_counts, output_dir / "report.html")
 
     _print_console_summary(objects, findings)
     console.print(f"\nWrote {len(findings)} finding(s) to [bold]{output_dir}[/bold]")

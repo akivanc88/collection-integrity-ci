@@ -60,3 +60,25 @@ def test_reports_are_byte_identical_across_runs(tmp_path: Path) -> None:
 
     for name in ("f.json", "f.csv", "s.json"):
         assert (a / name).read_bytes() == (b / name).read_bytes(), name
+
+
+def test_html_report_captures_every_finding(tmp_path: Path) -> None:
+    from collection_integrity.reporting.html_report import render_html_report
+
+    findings = _findings(tmp_path)
+    manifest = {
+        "run_id": "r",
+        "started_at": "2026-01-01T00:00:00Z",
+        "software_version": "0.1.0",
+        "command": "collection-ci scan",
+        "elapsed_seconds": 0.0,
+        "network_access_used": False,
+        "ai_providers_used": False,
+        "enabled_rules": [],
+        "input_hashes": {},
+    }
+    html = render_html_report(findings, manifest, {"objects": 60})
+
+    # Every finding's entity id appears in the rendered report.
+    for f in findings:
+        assert f.entity.id in html

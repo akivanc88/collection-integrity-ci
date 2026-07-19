@@ -803,3 +803,37 @@ an AI provider.
 Slice I validation approved (fidelity + determinism + VL-06).
 
 **Next slice:** Slice J — standalone HTML report (Jinja2, no external assets, accessible).
+
+---
+
+## 2026-07-19 — Loop 19: Slice J — standalone HTML report
+
+**Slice:** A self-contained, accessible HTML report (added Jinja2).
+
+**Files created/changed:** `reporting/html_report.py` (inline CSS + JS, no external assets;
+Jinja2 autoescape on; severity shown as text label + color; severity filter via inline vanilla JS;
+run summary, severity distribution, rules-evaluated table, findings with expandable evidence +
+recommendation + fingerprint, provenance with input hashes, disclaimer; light/dark via
+prefers-color-scheme; empty state); `cli.py` writes `report.html`. Tests: `test_html_report.py`
+(self-contained, lists all findings, **escapes an injected `<script>` payload**, empty state,
+disclaimer + provenance), extended `test_report_fidelity.py` and `test_scan_cli.py`.
+
+**Commands run and results:**
+
+```bash
+uv sync              # + jinja2 3.1.6
+uv run pytest -q     # 149 passed
+uv run ruff check .; uv run mypy src   # clean (36 source files)
+uv run collection-ci scan --objects-csv benchmarks/mini/objects_dirty.csv --output-dir <d>
+  # -> report.html (16 KB); grep for external asset refs (http/https/cdn) = none; disclaimer present
+```
+
+**Iteration 1 (fidelity + safety on AI data):** every finding's entity id appears in the rendered
+report for the synthetic dataset; the report contains no externally hosted assets (asserted no
+`src="http`, `href="http`, `@import`, `cdn`); a `<script>alert('xss')</script>` payload in a
+finding summary is escaped to `&lt;script&gt;` rather than rendered live (threat-model
+sanitization). Severity is conveyed as text, not color alone (accessibility).
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the HTML report. Then Slice K (SARIF 2.1.0).

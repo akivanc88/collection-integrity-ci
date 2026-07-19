@@ -179,8 +179,16 @@ def test_scan_writes_all_report_outputs(tmp_path: Path) -> None:
     )
 
     assert result.exit_code == 0, result.output
-    for name in ("findings.json", "findings.csv", "summary.json", "run_manifest.json"):
+    for name in (
+        "findings.json",
+        "findings.csv",
+        "summary.json",
+        "run_manifest.json",
+        "report.html",
+    ):
         assert (output_dir / name).is_file(), f"missing {name}"
+    html = (output_dir / "report.html").read_text(encoding="utf-8")
+    assert 'src="http' not in html and 'href="http' not in html  # self-contained
 
     manifest = json.loads((output_dir / "run_manifest.json").read_text(encoding="utf-8"))
     assert manifest["network_access_used"] is False
