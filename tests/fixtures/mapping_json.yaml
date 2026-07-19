@@ -1,0 +1,18 @@
+version: 1
+dataset:
+  name: mapping-test-json
+  format: json
+  base_path: .
+
+entities:
+  objects:
+    file: mapping_objects.json
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+      media_ids:
+        source: media
+        transform: split_pipe

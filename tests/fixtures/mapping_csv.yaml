@@ -1,0 +1,18 @@
+version: 1
+dataset:
+  name: mapping-test-csv
+  format: csv
+  base_path: .
+
+entities:
+  objects:
+    file: mapping_objects.csv
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+      media_ids:
+        source: media
+        transform: split_pipe

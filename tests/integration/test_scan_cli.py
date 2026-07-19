@@ -118,6 +118,50 @@ def test_scan_fail_on_none_exits_zero_even_with_findings(tmp_path: Path) -> None
     assert result.exit_code == 0, result.output
 
 
+def test_scan_via_mapping_json(tmp_path: Path) -> None:
+    output_dir = tmp_path / "scan"
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--mapping",
+            str(FIXTURES / "mapping_json.yaml"),
+            "--output-dir",
+            str(output_dir),
+            "--fail-on",
+            "none",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    findings = json.loads((output_dir / "findings.json").read_text(encoding="utf-8"))
+    # A2/A3 share an accession -> one CORE001 finding via the mapped JSON path.
+    rule_ids = [f["rule"]["id"] for f in findings]
+    assert "CORE001_DUPLICATE_ACCESSION_NUMBER" in rule_ids
+
+
+def test_scan_requires_exactly_one_input(tmp_path: Path) -> None:
+    # Neither input provided.
+    neither = runner.invoke(app, ["scan", "--output-dir", str(tmp_path / "a")])
+    assert neither.exit_code == 2
+
+    # Both inputs provided.
+    both = runner.invoke(
+        app,
+        [
+            "scan",
+            "--objects-csv",
+            str(FIXTURES / "objects_clean.csv"),
+            "--mapping",
+            str(FIXTURES / "mapping_csv.yaml"),
+            "--output-dir",
+            str(tmp_path / "b"),
+        ],
+    )
+    assert both.exit_code == 2
+
+
 def test_scan_missing_input_file_exits_two(tmp_path: Path) -> None:
     result = runner.invoke(
         app,

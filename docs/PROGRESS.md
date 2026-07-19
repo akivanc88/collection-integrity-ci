@@ -279,3 +279,62 @@ for the other Section 11 rules.
 
 **Next slice:** Slice B — configurable dataset-mapping layer (`BUILD_BRIEF.md` Section 10) +
 JSON adapter, ported behind the existing CSV path, then two validation iterations for it.
+
+---
+
+## 2026-07-18 — Loop 6: Slice B (configurable mapping layer + JSON adapter), both iterations
+
+**Slice:** The Section 10 mapping layer plus a JSON adapter, so arbitrary CSV/JSON exports with
+non-canonical column names can be ingested via a validated YAML mapping.
+
+**Files created/changed:**
+
+- `canonical/mappings.py` — Pydantic models (`DatasetMapping`, `EntityMapping`, `FieldMapping`)
+  with a `split_pipe`/`strip` transform set; `coerce_field_mapping` accepts either a bare source
+  column string or a `{source, transform}` form.
+- `ingestion/readers.py` — raw CSV and JSON readers returning `(row_number, raw_fields)`; JSON row
+  numbers are 1-based array positions, CSV counts the header as row 1.
+- `ingestion/mapper.py` — `load_mapping` (YAML -> validated model) and `load_objects` (applies the
+  mapping + transforms to build canonical `CollectionObject`s, preserving raw fields + provenance).
+- `cli.py` — `scan` now takes `--objects-csv` OR `--mapping` (exactly one; exit 2 otherwise);
+  updated module docstring.
+- `benchmark/dataset.py` — added `write_objects_json`.
+- `examples/mappings/clean-objects.yaml` — worked example mapping for the bundled clean dataset.
+- Fixtures: `mapping_objects.csv`, `mapping_objects.json`, `mapping_csv.yaml`, `mapping_json.yaml`.
+- Tests: `tests/unit/test_mapper.py`, `tests/integration/test_mapping_accuracy.py`, extended
+  `tests/integration/test_scan_cli.py` (mapping path + exactly-one-input).
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q            # 44 passed
+uv run ruff check .         # clean
+uv run mypy src             # clean (22 source files)
+uv run collection-ci scan --mapping examples/mappings/clean-objects.yaml --fail-on none
+  # -> Scanned 5 object record(s). No findings.
+```
+
+**Iteration 1 (build + unit validation):** `test_mapper.py` proves column renaming, `split_pipe`
+transform, JSON/CSV equivalence (identical canonical records from both formats), row-number and
+raw-field provenance, and error handling (no objects entity; non-array JSON).
+
+**Iteration 2 (accuracy validation on AI-generated data):** `test_mapping_accuracy.py` writes the
+synthetic dataset through a *renamed-column* schema in both CSV and JSON, ingests via a dataset
+mapping, and scores against the injection manifest — precision = recall = 1.0 for CORE001 and
+CORE002 on both formats. This confirms the mapping path is as accurate as the direct CSV path.
+
+**VL-06 (mutation) for Slice B:** run after commit (needs committed files for `git checkout`
+revert); results recorded in the next loop entry.
+
+**Issue fixed (not weakened):** mypy flagged `FieldMapping(**raw)` in `coerce_field_mapping`
+(the `transform` literal); switched to `FieldMapping.model_validate(raw)` so Pydantic validates the
+transform value against the allowed set.
+
+**Limitations:** mapping covers the `objects` entity only (media/rights/locations entities await
+their rules); transforms are limited to `split_pipe` and `strip`; JSON Schema files for the mapping
+(vs. Pydantic validation) are still deferred to Phase 3. Both validation iterations for Slice B are
+complete and approved.
+
+**Next slice:** run VL-06 mutation on the mapper/readers (post-commit), then continue the rule set
+(REF001 orphan media -> object) which will require the `MediaAsset` model and multi-entity
+ingestion.

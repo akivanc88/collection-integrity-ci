@@ -1,0 +1,17 @@
+# Example dataset mapping for the bundled clean example (examples/clean/objects.csv).
+# Run: uv run collection-ci scan --mapping examples/mappings/clean-objects.yaml --fail-on none
+version: 1
+dataset:
+  name: example-clean
+  format: csv
+  base_path: ../clean
+
+entities:
+  objects:
+    file: objects.csv
+    primary_key: object_id
+    fields:
+      object_id: object_id
+      accession_number: accession_number
+      title: title
+      object_name: object_name
