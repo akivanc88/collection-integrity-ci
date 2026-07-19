@@ -67,11 +67,14 @@ def test_csv_report_has_columns_and_parseable_evidence(tmp_path: Path) -> None:
 
 def test_csv_report_is_sorted_by_fingerprint(tmp_path: Path) -> None:
     path = tmp_path / "findings.csv"
-    write_findings_csv(_sample(), path)
+    # Feed findings in reverse-fingerprint order so the writer's sort is actually exercised.
+    findings = sorted(_sample(), key=lambda f: f.fingerprint, reverse=True)
+    write_findings_csv(findings, path)
 
     with path.open(encoding="utf-8") as fh:
         fingerprints = [r["fingerprint"] for r in csv.DictReader(fh)]
     assert fingerprints == sorted(fingerprints)
+    assert len(set(fingerprints)) >= 2  # the ordering assertion is non-trivial
 
 
 def test_summary_counts(tmp_path: Path) -> None:

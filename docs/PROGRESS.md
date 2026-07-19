@@ -792,6 +792,14 @@ reports capture exactly the finding fingerprint set with no loss; summary counts
 each report twice is byte-identical (the property CSV/JSON baselines depend on). Manifest records
 the input file hash and the network/AI=False flags.
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** mutation loop on the report writers + manifest (6 mutations): csv
+drop-fingerprint-sort, summary wrong-total, summary drop-rule-counts, manifest claim-network-used,
+manifest claim-ai-used, manifest wrong-total. First pass had **1 survivor** — the CSV sort test's
+sample was already sorted. Fixed by feeding findings in reverse order so the sort is exercised.
+Re-ran: **6/6 killed.** The claim-network-used / claim-ai-used mutants being caught is meaningful:
+the suite would notice if the manifest ever falsely claimed the offline engine used the network or
+an AI provider.
 
-**Next:** commit, VL-06 mutation on the report writers. Then Slice J (standalone HTML report).
+Slice I validation approved (fidelity + determinism + VL-06).
+
+**Next slice:** Slice J — standalone HTML report (Jinja2, no external assets, accessible).
