@@ -421,3 +421,27 @@ cases can't pass trivially.
 
 **Next:** commit, then VL-06 mutation on the new ingestion/rule code (needs committed files for the
 git-checkout revert), recorded in the next loop.
+
+---
+
+## 2026-07-18 — Loop 9: VL-06 mutation on Slice C found and closed one gap
+
+**Slice:** Mutation-test the Slice C code (REF001 + media ingestion) — Slice C's second validation.
+
+**Mutations tried:** REF001 treat-all-refs-valid (killed), REF001 flag-missing-object_id-too
+(killed), REF001 weaken-severity high->low (**SURVIVED**), media skip-empty-primary-key (killed).
+
+The survivor was a real gap: nothing asserted REF001's severity. Added
+`test_ref001_default_severity_is_high` (checks the registry's effective severity and a
+registry-run finding). Re-ran: **4/4 killed, zero survivors.**
+
+```bash
+uv run pytest tests/unit/test_reference_rules.py -q   # 4 passed
+# mutation loop (scratchpad, reverted via git checkout): all 4 killed
+```
+
+Slice C validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 3 of ~15
+(CORE001, CORE002, REF001).
+
+**Next slice:** Slice D — `RightsRecord` entity + REF002 (orphan rights reference) + RIGHTS001
+(publication-rights policy conflict), with injectors and two validated iterations.

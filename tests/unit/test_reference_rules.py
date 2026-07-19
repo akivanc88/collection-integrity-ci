@@ -26,6 +26,17 @@ def test_detects_orphan_media_reference() -> None:
     assert finding.evidence[0].value == "A9"
 
 
+def test_ref001_default_severity_is_high() -> None:
+    from collection_integrity.rules.registry import RuleRegistry
+
+    registry = RuleRegistry.with_defaults()
+    assert registry.effective_severity("REF001_ORPHAN_MEDIA_OBJECT") == "high"
+
+    findings = registry.evaluate(_ctx())
+    ref001 = [f for f in findings if f.rule.id == "REF001_ORPHAN_MEDIA_OBJECT"]
+    assert ref001 and all(f.severity == "high" for f in ref001)
+
+
 def test_valid_media_references_produce_no_findings() -> None:
     ctx = _ctx()
     # Restrict to only the media that reference existing objects.
