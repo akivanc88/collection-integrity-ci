@@ -32,6 +32,15 @@ TODOs and deferred work, with rationale and rough priority, per `BUILD_BRIEF.md`
   (Phase 1 `ci.yml` only does install, lint, format, type check, tests, build, and a sample scan
   against `examples/clean`). Add these as each underlying feature lands in Phase 3.
 
+## Validation tooling upgrades
+
+- **Graduate VL-06 from a manual mutation set to `mutmut` (or `cosmic-ray`).** Rationale: the
+  current mutation loop uses a curated, hand-written list of defects (see `docs/PROGRESS.md`
+  Loop 5); a mutation-testing tool would explore the full mutation space automatically. Deferred
+  until the rule set is larger and worth the CI runtime.
+- **Wire coverage.py with a threshold (VL-07).** Rationale: coverage is in the brief's stack but
+  not yet configured; belongs with the other Section 20 CI steps.
+
 ## Low priority / explicitly deferred
 
 - Source adapters (Met, Cleveland, NGA) — Phase 4.

@@ -19,12 +19,12 @@ on a later phase's features).
 
 | ID | Loop | Validates | Status |
 | --- | --- | --- | --- |
-| VL-01 | Benchmark closure | Rule-engine correctness | pending (Phase 3) |
-| VL-02 | Fingerprint determinism | Finding identity/baselines | partial |
+| VL-01 | Benchmark closure | Rule-engine correctness | partial (CORE001/CORE002 pass at P=R=1.0) |
+| VL-02 | Fingerprint determinism | Finding identity/baselines | active (all rules, incl. shuffled input) |
 | VL-03 | Baseline round-trip | Regression behavior | pending (Phase 3) |
 | VL-04 | Threat-model adversarial | Robustness to hostile input | pending (Phase 2–3) |
 | VL-05 | Fuzz/property contract | Crash-freedom, exit-code contract | pending (Phase 2) |
-| VL-06 | Test-strength (mutation) | The test suite itself | active |
+| VL-06 | Test-strength (mutation) | The test suite itself | active (7/7 mutants killed) |
 | VL-07 | Coverage ratchet | Test breadth over time | pending (CI wiring) |
 | VL-08 | README-executes | Honest documentation | partial |
 | VL-09 | Progress audit | Recorded claims vs. reality | active |

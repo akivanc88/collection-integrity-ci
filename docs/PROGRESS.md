@@ -228,3 +228,54 @@ parametrized over the registry) and VL-06 (mutation testing of each rule's tests
 evidence. Then Slice B (mapping layer + JSON adapter).
 
 ---
+
+## 2026-07-18 — Loop 5: Slice A iteration 2 (validation loops VL-02 + VL-06 approved)
+
+**Slice:** Second iteration of Slice A — execute the two validation loops that are runnable now,
+satisfying the goal's "≥2 iterations with validation approved" for the rule-engine slice.
+
+**VL-02 (fingerprint determinism) — now `active`:** added
+`tests/property/test_fingerprint_determinism.py`, parametrized over `ALL_RULE_CLASSES`, asserting
+each rule's fingerprint set is (a) identical across two identical runs and (b) invariant to input
+row order (shuffled with a fixed seed). Because it iterates the registry, adding a new rule with
+an order-dependent fingerprint fails this test automatically.
+
+```bash
+uv run pytest tests/property/test_fingerprint_determinism.py -v   # 4 passed (2 rules x 2 checks)
+```
+
+**VL-06 (test-strength / mutation) — executed, `active`:** ran a mutation loop (script kept in the
+session scratchpad, never committed) applying one deliberate defect at a time to
+`rules/core_rules.py` and `rules/registry.py`, running the suite after each, and reverting via
+`git checkout`. Mutations tried and all **killed** (suite failed as required):
+
+1. CORE001 off-by-one (`len(group) < 2` -> `< 3`) — pairs no longer flagged — killed
+2. CORE001 drop the non-empty accession filter — killed
+3. CORE001 weaken default severity critical -> low — killed
+4. CORE002 invert the missing check (`is not None` -> `is None`) — killed
+5. CORE002 ignore configured required fields (`checked_fields = []`) — killed
+6. Registry ignore the disabled flag — killed
+7. Registry ignore severity override — killed
+
+Result: 7/7 mutants killed, zero survivors — VL-06 done condition met for this mutation set.
+Working tree confirmed clean after reverts; full suite green (34 passed).
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q            # 34 passed
+uv run ruff check .         # clean
+uv run mypy src             # clean
+python <scratchpad>/mutation_run.py   # All mutants killed
+```
+
+**Validation approved for Slice A:** two iterations complete — iteration 1 (build + accuracy
+P=R=1.0 on the AI-generated dataset, Loop 4) and iteration 2 (VL-02 + VL-06, this loop). Updated
+the status column in `docs/VALIDATION_LOOPS.md` (VL-01 partial-pass, VL-02 and VL-06 active).
+
+**Limitations:** VL-06 is a curated manual mutation set, not an exhaustive tool run; graduating to
+`mutmut` is noted in `docs/BACKLOG.md` as a future upgrade. VL-01 remains partial pending injectors
+for the other Section 11 rules.
+
+**Next slice:** Slice B — configurable dataset-mapping layer (`BUILD_BRIEF.md` Section 10) +
+JSON adapter, ported behind the existing CSV path, then two validation iterations for it.
