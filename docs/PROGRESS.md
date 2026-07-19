@@ -581,3 +581,43 @@ Slice E validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 7 of
 **Next slice:** Slice F — object-only rules DATE001 (inverted production date range), VOCAB001
 (value outside a configured controlled vocabulary), SCHEMA001 (value not parseable to its declared
 type). These need only the objects entity, so no new model or multi-entity work.
+
+---
+
+## 2026-07-18 — Loop 14: Slice F — object-only rules DATE001 + VOCAB001 + SCHEMA001
+
+**Slice:** Three rules over the objects entity, no new model. Added production-date parsing to
+ingestion.
+
+**Files created/changed:** `ingestion/mapper.py` — `parse_date` (ISO + bare-year), `_date`,
+production dates added to `SCALAR_OBJECT_FIELDS` + parsed in `_build_object`, `TYPED_OBJECT_FIELDS`
+map, `object_field_sources` helper; `rules/base.py` — `RuleContext.controlled_vocabularies` +
+`object_field_sources`; new `rules/date_rules.py` (DATE001 medium), `rules/vocabulary_rules.py`
+(VOCAB001 medium, inactive without a configured vocabulary), `rules/schema_rules.py` (SCHEMA001
+high — reuses the ingestion parser and reads the raw value back from provenance so the finding
+shows the offending text); `rules/registry.py`; `cli.py` (`_load_entities` returns the field-source
+map). Benchmark: `add_dates_and_status`, `OBJECT_WITH_DATES_COLUMNS`, `PUBLICATION_VOCABULARY`,
+`inject_object_field_errors`, generic `expected_ids_for` + scoring. Tests:
+`test_object_field_rules.py`, `test_object_field_accuracy.py`; fixtures
+`objects_dates_vocab.csv`, `mapping_dates_vocab.yaml`; VL-02 harness extended.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 101 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (28 source files)
+```
+
+**Iteration 1 (accuracy on AI data):** clean objects (valid dates, in-vocab statuses) yield no
+DATE001/VOCAB001/SCHEMA001; injecting 4 inverted ranges + 4 out-of-vocab values + 4 unparseable
+dates and scoring gives **precision = recall = 1.0** for all three (TP 4 each). SCHEMA001 and
+DATE001 share the same date parser so "valid date" is defined once. VOCAB001 and SCHEMA001 are
+inactive without config (no vocabulary / no field-source map), verified by tests.
+
+**Iteration 2 (VL-02):** harness extended so objects carry production dates + status + raw_fields;
+DATE001 and SCHEMA001 exercised (2 each; guard tests assert the counts); all 10 rules pass stable +
+shuffled. Fixed a compose-order bug where `add_dates_and_status` had overwritten the injected
+RIGHTS001 statuses — it now preserves an existing publication_status.
+
+**Next:** commit, then VL-06 mutation on DATE001/VOCAB001/SCHEMA001. Phase 2 rule count: 10 of ~15.

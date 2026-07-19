@@ -7,7 +7,7 @@ remains for the simple, mapping-free case.
 
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import yaml
@@ -41,8 +41,16 @@ SCALAR_OBJECT_FIELDS = {
     "current_location_id",
     "rights_id",
     "publication_status",
+    "production_start_date",
+    "production_end_date",
 }
 LIST_OBJECT_FIELDS = {"media_ids", "maker_ids", "materials", "techniques"}
+
+# Object fields with a non-string canonical type, and the type SCHEMA001 checks them against.
+TYPED_OBJECT_FIELDS = {
+    "production_start_date": "date",
+    "production_end_date": "date",
+}
 
 SCALAR_MEDIA_FIELDS = {
     "media_id",
@@ -231,6 +239,37 @@ def _bool(mapped: dict[str, str | list[str]], name: str) -> bool | None:
     return None
 
 
+def parse_date(raw: str) -> date | None:
+    """Parse a museum-style date string, or return None if it is empty or unparseable.
+
+    Accepts ISO dates (YYYY-MM-DD) and bare years (YYYY, mapped to Jan 1). SCHEMA001 and the date
+    rules share this parser so "what counts as a valid date" is defined in exactly one place.
+    """
+    text = raw.strip()
+    if not text:
+        return None
+    try:
+        return date.fromisoformat(text)
+    except ValueError:
+        pass
+    if text.isdigit() and len(text) == 4:
+        return date(int(text), 1, 1)
+    return None
+
+
+def _date(mapped: dict[str, str | list[str]], name: str) -> date | None:
+    value = mapped.get(name)
+    return parse_date(value) if isinstance(value, str) else None
+
+
+def object_field_sources(mapping: DatasetMapping) -> dict[str, str]:
+    """canonical field name -> source column, for the objects entity (used by SCHEMA001)."""
+    entity = mapping.entities.get("objects")
+    if entity is None:
+        return {}
+    return {canonical: fm.source for canonical, fm in entity.fields.items()}
+
+
 def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> CollectionObject:
     def listing(name: str) -> list[str]:
         value = mapped.get(name)
@@ -247,6 +286,8 @@ def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> 
         current_location_id=_scalar(mapped, "current_location_id"),
         rights_id=_scalar(mapped, "rights_id"),
         publication_status=_scalar(mapped, "publication_status"),
+        production_start_date=_date(mapped, "production_start_date"),
+        production_end_date=_date(mapped, "production_end_date"),
         media_ids=listing("media_ids"),
         maker_ids=listing("maker_ids"),
         materials=listing("materials"),

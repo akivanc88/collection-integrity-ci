@@ -81,6 +81,10 @@ class InjectionManifest:
         rid = "LOC002_INVALID_LOCATION_HIERARCHY"
         return {e.entity_id for e in self.errors if e.expected_rule_id == rid}
 
+    def expected_ids_for(self, rule_id: str) -> set[str]:
+        """entity ids a correct run of `rule_id` must flag (generic accessor)."""
+        return {e.entity_id for e in self.errors if e.expected_rule_id == rule_id}
+
 
 def inject_errors(
     clean_rows: list[dict[str, str]],
@@ -270,6 +274,82 @@ def inject_publication_conflict(
                 after_value="public",
             )
         )
+    return rows, errors
+
+
+def inject_object_field_errors(
+    object_rows: list[dict[str, str]],
+    seed: int,
+    num_inverted_date: int = 3,
+    num_bad_vocab: int = 3,
+    num_bad_type: int = 3,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Inject DATE001, VOCAB001, and SCHEMA001 errors into object rows on disjoint rows.
+
+    Non-mutating. Requires object rows carrying production_start_date/production_end_date and
+    publication_status (see synthetic.add_dates_and_status).
+    """
+    needed = num_inverted_date + num_bad_vocab + num_bad_type
+    if needed > len(object_rows):
+        raise ValueError(f"need at least {needed} object rows, got {len(object_rows)}")
+
+    rows = copy.deepcopy(object_rows)
+    rng = random.Random(seed)
+    indices = list(range(len(rows)))
+    rng.shuffle(indices)
+    pool = iter(indices)
+
+    errors: list[InjectedError] = []
+
+    for n in range(num_inverted_date):
+        idx = next(pool)
+        # Swap so start is strictly after end.
+        rows[idx]["production_start_date"] = "1950-01-01"
+        rows[idx]["production_end_date"] = "1900-01-01"
+        errors.append(
+            InjectedError(
+                error_id=f"INVERTED-DATE-{n + 1}",
+                expected_rule_id="DATE001_INVERTED_DATE_RANGE",
+                entity_type="object",
+                entity_id=rows[idx]["object_id"],
+                field="production_start_date",
+                before_value="",
+                after_value="1950-01-01>1900-01-01",
+            )
+        )
+
+    for n in range(num_bad_vocab):
+        idx = next(pool)
+        before = rows[idx].get("publication_status", "")
+        rows[idx]["publication_status"] = "confidential"
+        errors.append(
+            InjectedError(
+                error_id=f"BAD-VOCAB-{n + 1}",
+                expected_rule_id="VOCAB001_UNKNOWN_CONTROLLED_VALUE",
+                entity_type="object",
+                entity_id=rows[idx]["object_id"],
+                field="publication_status",
+                before_value=before,
+                after_value="confidential",
+            )
+        )
+
+    for n in range(num_bad_type):
+        idx = next(pool)
+        before = rows[idx].get("production_start_date", "")
+        rows[idx]["production_start_date"] = "not-a-date"
+        errors.append(
+            InjectedError(
+                error_id=f"BAD-TYPE-{n + 1}",
+                expected_rule_id="SCHEMA001_INVALID_FIELD_TYPE",
+                entity_type="object",
+                entity_id=rows[idx]["object_id"],
+                field="production_start_date",
+                before_value=before,
+                after_value="not-a-date",
+            )
+        )
+
     return rows, errors
 
 

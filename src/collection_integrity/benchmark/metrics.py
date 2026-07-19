@@ -88,6 +88,18 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
         "LOC002_INVALID_LOCATION_HIERARCHY": _metrics(
             "LOC002_INVALID_LOCATION_HIERARCHY", loc002_found, manifest.expected_loc002_ids()
         ),
+        **{
+            rule_id: _metrics(
+                rule_id,
+                {f.entity.id for f in findings if f.rule.id == rule_id},
+                manifest.expected_ids_for(rule_id),
+            )
+            for rule_id in (
+                "DATE001_INVERTED_DATE_RANGE",
+                "VOCAB001_UNKNOWN_CONTROLLED_VALUE",
+                "SCHEMA001_INVALID_FIELD_TYPE",
+            )
+        },
     }
 
 

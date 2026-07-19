@@ -42,6 +42,10 @@ class RuleContext:
     rights: list[RightsRecord] = field(default_factory=list)
     locations: list[LocationRecord] = field(default_factory=list)
     required_fields: list[str] = field(default_factory=list)
+    # object field name -> allowed values (VOCAB001). Empty means the check is inactive.
+    controlled_vocabularies: dict[str, list[str]] = field(default_factory=dict)
+    # object canonical field -> source column, for reporting the raw value in SCHEMA001.
+    object_field_sources: dict[str, str] = field(default_factory=dict)
 
 
 class Rule(ABC):

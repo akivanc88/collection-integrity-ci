@@ -1,0 +1,18 @@
+version: 1
+dataset:
+  name: dates-vocab-test
+  format: csv
+  base_path: .
+
+entities:
+  objects:
+    file: objects_dates_vocab.csv
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+      publication_status: pub
+      production_start_date: dstart
+      production_end_date: dend

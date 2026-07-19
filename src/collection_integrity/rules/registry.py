@@ -15,6 +15,7 @@ from collection_integrity.rules.core_rules import (
     DuplicateAccessionNumberRule,
     RequiredFieldMissingRule,
 )
+from collection_integrity.rules.date_rules import InvertedDateRangeRule
 from collection_integrity.rules.location_rules import (
     InvalidLocationHierarchyRule,
     MultipleCurrentLocationsRule,
@@ -24,6 +25,8 @@ from collection_integrity.rules.reference_rules import (
     OrphanRightsReferenceRule,
 )
 from collection_integrity.rules.rights_rules import PublicationRightsConflictRule
+from collection_integrity.rules.schema_rules import InvalidFieldTypeRule
+from collection_integrity.rules.vocabulary_rules import UnknownControlledValueRule
 
 # All rules known to the engine, in a stable order. New rules are appended here.
 ALL_RULE_CLASSES: tuple[type[Rule], ...] = (
@@ -34,6 +37,9 @@ ALL_RULE_CLASSES: tuple[type[Rule], ...] = (
     PublicationRightsConflictRule,
     MultipleCurrentLocationsRule,
     InvalidLocationHierarchyRule,
+    InvertedDateRangeRule,
+    UnknownControlledValueRule,
+    InvalidFieldTypeRule,
 )
 
 

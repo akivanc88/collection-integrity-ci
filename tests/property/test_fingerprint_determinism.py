@@ -20,11 +20,14 @@ from collection_integrity.benchmark.injectors import (
     inject_errors,
     inject_extra_current_location,
     inject_location_hierarchy_errors,
+    inject_object_field_errors,
     inject_orphan_media,
     inject_orphan_rights,
     inject_publication_conflict,
 )
 from collection_integrity.benchmark.synthetic import (
+    PUBLICATION_VOCABULARY,
+    add_dates_and_status,
     generate_clean_locations,
     generate_clean_media,
     generate_clean_objects,
@@ -39,19 +42,27 @@ from collection_integrity.canonical.models import (
     RightsRecord,
     SourceRef,
 )
+from collection_integrity.ingestion.mapper import parse_date
 from collection_integrity.rules.base import Rule, RuleContext
 from collection_integrity.rules.registry import ALL_RULE_CLASSES
 
 REQUIRED_FIELDS = ["accession_number", "object_name"]
+VOCAB = {"publication_status": PUBLICATION_VOCABULARY}
+# Identity field-source map: the harness builds objects directly with canonical column names.
+FIELD_SOURCES = {
+    "production_start_date": "production_start_date",
+    "production_end_date": "production_end_date",
+}
 
 
-def _ref(rid: str) -> SourceRef:
+def _ref(rid: str, raw: dict[str, str] | None = None) -> SourceRef:
     return SourceRef(
         source_name="vl02",
         source_file="vl02.csv",
         source_record_id=rid,
         source_hash="x",
         ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+        raw_fields=raw,
     )
 
 
@@ -64,7 +75,9 @@ def _rows_to_objects(rows: list[dict[str, str]]) -> list[CollectionObject]:
             object_name=(row.get("object_name") or "").strip() or None,
             rights_id=(row.get("rights_id") or "").strip() or None,
             publication_status=(row.get("publication_status") or "").strip() or None,
-            source_ref=_ref(row["object_id"]),
+            production_start_date=parse_date(row.get("production_start_date", "")),
+            production_end_date=parse_date(row.get("production_end_date", "")),
+            source_ref=_ref(row["object_id"], raw=row),
         )
         for row in rows
     ]
@@ -121,6 +134,13 @@ def _dirty_context() -> tuple[
     linked = link_objects_to_rights(dirty_objs, rights, seed=15)
     linked, _ = inject_orphan_rights(linked, valid_rights, seed=31, num_orphan=3)
     linked, _ = inject_publication_conflict(linked, restricted, seed=41, num_conflict=3)
+    # Add production dates (status is preserved from the rights linking above), then inject DATE001
+    # and SCHEMA001 errors. Vocab injection is skipped here because it would overwrite
+    # publication_status and collide with the RIGHTS001 conflicts already injected.
+    linked = add_dates_and_status(linked, seed=51)
+    linked, _ = inject_object_field_errors(
+        linked, seed=61, num_inverted_date=2, num_bad_vocab=0, num_bad_type=2
+    )
 
     media = generate_clean_media(clean, seed=13)
     dirty_media, _ = inject_orphan_media(
@@ -154,6 +174,8 @@ def _fingerprints(
         rights=rights,
         locations=locations,
         required_fields=REQUIRED_FIELDS,
+        controlled_vocabularies=VOCAB,
+        object_field_sources=FIELD_SOURCES,
     )
     return {f.fingerprint for f in rule.evaluate(ctx, rule.default_severity)}
 
@@ -191,6 +213,8 @@ def test_fingerprints_invariant_to_input_order(rule_cls: type[Rule]) -> None:
         ("RIGHTS001_PUBLICATION_CONFLICT", 3),
         ("LOC001_MULTIPLE_CURRENT_LOCATIONS", 3),
         ("LOC002_INVALID_LOCATION_HIERARCHY", 4),
+        ("DATE001_INVERTED_DATE_RANGE", 2),
+        ("SCHEMA001_INVALID_FIELD_TYPE", 2),
     ],
 )
 def test_harness_actually_exercises_each_rule(rule_id: str, expected_count: int) -> None:

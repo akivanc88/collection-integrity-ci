@@ -1,0 +1,6 @@
+id,accession,name,pub,dstart,dend
+A1,2001.1.1,Sunrise,public,1850-01-01,1860-01-01
+A2,2001.1.2,Harbor,public,1900-01-01,1880-01-01
+A3,2001.1.3,Dusk,confidential,1700,1750
+A4,2001.1.4,Dawn,internal,notadate,1800
+A5,2001.1.5,Noon,private,1820,1820

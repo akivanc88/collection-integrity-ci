@@ -78,6 +78,40 @@ OBJECT_WITH_RIGHTS_COLUMNS = OBJECT_COLUMNS + ("rights_id", "publication_status"
 # Location table columns (a union of hierarchy-node and object-assignment fields).
 LOCATION_COLUMNS = ("location_id", "name", "parent_location_id", "object_id", "is_current")
 
+# Object columns including production dates + publication status (for the object-field benchmark).
+OBJECT_WITH_DATES_COLUMNS = OBJECT_COLUMNS + (
+    "publication_status",
+    "production_start_date",
+    "production_end_date",
+)
+
+PUBLICATION_VOCABULARY = ["public", "internal", "private"]
+
+
+def add_dates_and_status(objects: list[dict[str, str]], seed: int) -> list[dict[str, str]]:
+    """Augment object rows with a valid production date range and an in-vocabulary status.
+
+    Clean invariant: start <= end (parseable ISO dates) and publication_status is in
+    PUBLICATION_VOCABULARY, so DATE001/VOCAB001/SCHEMA001 find nothing. An existing non-empty
+    publication_status is preserved (so this composes after a rights-linking step that already set
+    a status consistent with the rights record).
+    """
+    rng = random.Random(seed)
+    out: list[dict[str, str]] = []
+    for obj in objects:
+        start_year = 1600 + rng.randint(0, 300)
+        span = rng.randint(0, 40)
+        status = obj.get("publication_status") or rng.choice(PUBLICATION_VOCABULARY)
+        out.append(
+            {
+                **obj,
+                "publication_status": status,
+                "production_start_date": f"{start_year}-01-01",
+                "production_end_date": f"{start_year + span}-01-01",
+            }
+        )
+    return out
+
 
 def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
     """Generate `count` internally consistent object rows, deterministically from `seed`."""

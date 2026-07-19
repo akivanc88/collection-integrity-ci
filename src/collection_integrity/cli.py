@@ -32,6 +32,7 @@ from collection_integrity.ingestion.mapper import (
     load_media,
     load_objects,
     load_rights,
+    object_field_sources,
 )
 from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.rules.base import RuleContext
@@ -99,7 +100,7 @@ def scan(
         raise typer.Exit(code=2)
 
     try:
-        objects, media, rights, locations = _load_entities(objects_csv, mapping)
+        objects, media, rights, locations, field_sources = _load_entities(objects_csv, mapping)
     except (CsvIngestionError, IngestionError, FileNotFoundError, KeyError) as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
@@ -111,6 +112,7 @@ def scan(
         rights=rights,
         locations=locations,
         required_fields=required_fields,
+        object_field_sources=field_sources,
     )
     findings = registry.evaluate(ctx)
 
@@ -134,12 +136,23 @@ def scan(
 
 def _load_entities(
     objects_csv: Path | None, mapping_path: Path | None
-) -> tuple[list[CollectionObject], list[MediaAsset], list[RightsRecord], list[LocationRecord]]:
-    """Load objects, plus media/rights/locations when the mapping defines those entities."""
+) -> tuple[
+    list[CollectionObject],
+    list[MediaAsset],
+    list[RightsRecord],
+    list[LocationRecord],
+    dict[str, str],
+]:
+    """Load objects, plus media/rights/locations when the mapping defines those entities.
+
+    Also returns the objects entity's canonical->source field map, which SCHEMA001 uses to report
+    the offending raw value.
+    """
     if objects_csv is not None:
         if not objects_csv.exists():
             raise FileNotFoundError(f"Input file not found: {objects_csv}")
-        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), [], [], []
+        # In the simple CSV path source columns already carry canonical names.
+        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), [], [], [], {}
 
     assert mapping_path is not None  # guaranteed by the caller's exactly-one check
     if not mapping_path.exists():
@@ -150,7 +163,7 @@ def _load_entities(
     media = load_media(mapping, base_dir=base) if has_entity(mapping, "media") else []
     rights = load_rights(mapping, base_dir=base) if has_entity(mapping, "rights") else []
     locations = load_locations(mapping, base_dir=base) if has_entity(mapping, "locations") else []
-    return objects, media, rights, locations
+    return objects, media, rights, locations, object_field_sources(mapping)
 
 
 def _print_console_summary(objects: list, findings: list) -> None:  # type: ignore[type-arg]
