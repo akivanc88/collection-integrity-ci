@@ -15,10 +15,19 @@ from collection_integrity.rules.core_rules import (
     DuplicateAccessionNumberRule,
     RequiredFieldMissingRule,
 )
-from collection_integrity.rules.date_rules import InvertedDateRangeRule
+from collection_integrity.rules.date_rules import (
+    AgentLifespanConflictRule,
+    InvertedDateRangeRule,
+)
 from collection_integrity.rules.location_rules import (
     InvalidLocationHierarchyRule,
     MultipleCurrentLocationsRule,
+)
+from collection_integrity.rules.media_rules import (
+    DuplicateFileHashRule,
+    ImageBelowMinimumDimensionsRule,
+    LocalMediaFileMissingRule,
+    UnreadableImageRule,
 )
 from collection_integrity.rules.reference_rules import (
     OrphanMediaObjectRule,
@@ -38,8 +47,13 @@ ALL_RULE_CLASSES: tuple[type[Rule], ...] = (
     MultipleCurrentLocationsRule,
     InvalidLocationHierarchyRule,
     InvertedDateRangeRule,
+    AgentLifespanConflictRule,
     UnknownControlledValueRule,
     InvalidFieldTypeRule,
+    LocalMediaFileMissingRule,
+    DuplicateFileHashRule,
+    ImageBelowMinimumDimensionsRule,
+    UnreadableImageRule,
 )
 
 

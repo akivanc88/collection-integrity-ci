@@ -643,3 +643,44 @@ Slice F validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 10 o
 hash), MEDIA003 (below minimum dimensions), MEDIA004 (unreadable image), plus DATE002 (agent
 lifespan conflict). MEDIA00x need real local image files and Pillow (a new dependency, allowed by
 the brief); DATE002 needs the AgentOrMaker entity.
+
+---
+
+## 2026-07-18 — Loop 16: Slice G — MEDIA001-004 (Pillow) + DATE002 (all 15 rules now implemented)
+
+**Slice:** The four media-file rules plus DATE002, completing the initial 15-rule set. Added
+Pillow as a dependency.
+
+**Files created/changed:** `pyproject.toml` (pillow); `engine/media_files.py` (new — path
+resolution with a traversal guard, image size + readability via Pillow); `rules/media_rules.py`
+(new — MEDIA001 high, MEDIA002 medium, MEDIA003 medium, MEDIA004 high; inactive unless
+`check_media_files` + `media_root` set); `canonical/models.py` (`AgentOrMaker`); `ingestion/mapper.py`
+(`load_agents`, `_build_agent`, `SCALAR_AGENT_FIELDS`); `rules/date_rules.py`
+(`AgentLifespanConflictRule` — DATE002 medium, conservative: only clear impossibilities, only when
+object production dates AND maker birth/death dates are all present); `rules/base.py`
+(`RuleContext.agents` + media-file config fields); `rules/registry.py`; `cli.py` (`--media-root`,
+`--min-image-width/height`; 6-tuple `_load_entities`). Tests: `test_media_rules.py` (real PNGs via
+Pillow, incl. path-traversal refusal), `test_media_accuracy.py`, `test_date002_rule.py`;
+`benchmark/metrics.py` scores MEDIA001-004.
+
+**Commands run and results:**
+
+```bash
+uv sync              # + pillow 12.3.0
+uv run pytest -q     # 127 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (30 source files)
+```
+
+**Iteration 1 (accuracy on AI data):** MEDIA rules — generated valid PNGs + a media table (clean =
+no findings), injected missing files, byte-identical duplicates, undersized images, and corrupt
+files → **precision = recall = 1.0** for all four (a nice moment: MEDIA002 caught that two corrupt
+files were byte-identical, an unlabelled true duplicate, which surfaced a test-data bug I then
+fixed). DATE002 — unit tests cover production-before-birth, production-after-death, within-lifespan
+(no finding), and imprecise-dates (inactive). Path-traversal refusal is tested
+(`../../etc/passwd` is never followed).
+
+**Iteration 2 (VL-06 mutation):** run after commit (next loop).
+
+**Next:** commit, VL-06 mutation on MEDIA001-004 + DATE002. Phase 2 rule count: **15 of 15** — the
+full initial rule set from Section 11 is implemented. Slice H (run store) is the last Phase 2 item.

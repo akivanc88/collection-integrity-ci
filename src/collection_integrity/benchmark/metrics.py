@@ -98,6 +98,10 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
                 "DATE001_INVERTED_DATE_RANGE",
                 "VOCAB001_UNKNOWN_CONTROLLED_VALUE",
                 "SCHEMA001_INVALID_FIELD_TYPE",
+                "MEDIA001_LOCAL_FILE_MISSING",
+                "MEDIA002_DUPLICATE_FILE_HASH",
+                "MEDIA003_IMAGE_BELOW_MINIMUM_DIMENSIONS",
+                "MEDIA004_UNREADABLE_IMAGE",
             )
         },
     }

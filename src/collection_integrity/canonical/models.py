@@ -104,3 +104,18 @@ class LocationRecord(BaseModel):
     effective_start: date | None = None
     effective_end: date | None = None
     source_ref: SourceRef
+
+
+class AgentOrMaker(BaseModel):
+    """A canonical person or organization record (maker, artist, donor, etc.)."""
+
+    model_config = ConfigDict(frozen=True)
+
+    agent_id: str
+    preferred_name: str | None = None
+    alternate_names: list[str] = Field(default_factory=list)
+    birth_date: date | None = None
+    death_date: date | None = None
+    nationality: str | None = None
+    external_identifiers: list[str] = Field(default_factory=list)
+    source_ref: SourceRef

@@ -19,6 +19,7 @@ from collection_integrity.canonical.mappings import (
     coerce_field_mapping,
 )
 from collection_integrity.canonical.models import (
+    AgentOrMaker,
     CollectionObject,
     LocationRecord,
     MediaAsset,
@@ -83,6 +84,14 @@ SCALAR_LOCATION_FIELDS = {
     "parent_location_id",
     "object_id",
     "is_current",
+}
+
+SCALAR_AGENT_FIELDS = {
+    "agent_id",
+    "preferred_name",
+    "nationality",
+    "birth_date",
+    "death_date",
 }
 
 _TRUE = {"true", "1", "yes", "y", "t"}
@@ -204,6 +213,12 @@ def load_locations(mapping: DatasetMapping, base_dir: Path) -> list[LocationReco
     """Load the `locations` entity described by `mapping` into canonical records."""
     records = _load_entity_records(mapping, "locations", base_dir, SCALAR_LOCATION_FIELDS, set())
     return [_build_location(mapped, ref) for mapped, ref in records]
+
+
+def load_agents(mapping: DatasetMapping, base_dir: Path) -> list[AgentOrMaker]:
+    """Load the `agents` entity described by `mapping` into canonical records."""
+    records = _load_entity_records(mapping, "agents", base_dir, SCALAR_AGENT_FIELDS, set())
+    return [_build_agent(mapped, ref) for mapped, ref in records]
 
 
 def has_entity(mapping: DatasetMapping, entity_name: str) -> bool:
@@ -333,5 +348,16 @@ def _build_location(mapped: dict[str, str | list[str]], source_ref: SourceRef) -
         parent_location_id=_scalar(mapped, "parent_location_id"),
         object_id=_scalar(mapped, "object_id"),
         is_current=_bool(mapped, "is_current"),
+        source_ref=source_ref,
+    )
+
+
+def _build_agent(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> AgentOrMaker:
+    return AgentOrMaker(
+        agent_id=str(mapped["agent_id"]),
+        preferred_name=_scalar(mapped, "preferred_name"),
+        nationality=_scalar(mapped, "nationality"),
+        birth_date=_date(mapped, "birth_date"),
+        death_date=_date(mapped, "death_date"),
         source_ref=source_ref,
     )

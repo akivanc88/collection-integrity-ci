@@ -19,6 +19,7 @@ from rich.console import Console
 from rich.table import Table
 
 from collection_integrity.canonical.models import (
+    AgentOrMaker,
     CollectionObject,
     LocationRecord,
     MediaAsset,
@@ -27,6 +28,7 @@ from collection_integrity.canonical.models import (
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
 from collection_integrity.ingestion.mapper import (
     has_entity,
+    load_agents,
     load_locations,
     load_mapping,
     load_media,
@@ -79,6 +81,16 @@ def scan(
             )
         ),
     ] = None,
+    media_root: Annotated[
+        Path | None,
+        typer.Option(help="Enable local media-file checks (MEDIA001-004), resolving paths here."),
+    ] = None,
+    min_image_width: Annotated[
+        int, typer.Option(help="Minimum image width for MEDIA003 (0 disables).")
+    ] = 0,
+    min_image_height: Annotated[
+        int, typer.Option(help="Minimum image height for MEDIA003 (0 disables).")
+    ] = 0,
 ) -> None:
     """Scan collection objects and report deterministic integrity findings.
 
@@ -100,10 +112,16 @@ def scan(
         raise typer.Exit(code=2)
 
     try:
-        objects, media, rights, locations, field_sources = _load_entities(objects_csv, mapping)
+        objects, media, rights, locations, agents, field_sources = _load_entities(
+            objects_csv, mapping
+        )
     except (CsvIngestionError, IngestionError, FileNotFoundError, KeyError) as exc:
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
+
+    if media_root is not None and not media_root.exists():
+        console.print(f"[red]Media root not found: {media_root}[/red]")
+        raise typer.Exit(code=2)
 
     registry = RuleRegistry.with_defaults()
     ctx = RuleContext(
@@ -111,8 +129,13 @@ def scan(
         media=media,
         rights=rights,
         locations=locations,
+        agents=agents,
         required_fields=required_fields,
         object_field_sources=field_sources,
+        check_media_files=media_root is not None,
+        media_root=media_root,
+        min_image_width=min_image_width,
+        min_image_height=min_image_height,
     )
     findings = registry.evaluate(ctx)
 
@@ -141,9 +164,10 @@ def _load_entities(
     list[MediaAsset],
     list[RightsRecord],
     list[LocationRecord],
+    list[AgentOrMaker],
     dict[str, str],
 ]:
-    """Load objects, plus media/rights/locations when the mapping defines those entities.
+    """Load objects, plus media/rights/locations/agents when the mapping defines those entities.
 
     Also returns the objects entity's canonical->source field map, which SCHEMA001 uses to report
     the offending raw value.
@@ -152,7 +176,7 @@ def _load_entities(
         if not objects_csv.exists():
             raise FileNotFoundError(f"Input file not found: {objects_csv}")
         # In the simple CSV path source columns already carry canonical names.
-        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), [], [], [], {}
+        return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), [], [], [], [], {}
 
     assert mapping_path is not None  # guaranteed by the caller's exactly-one check
     if not mapping_path.exists():
@@ -163,7 +187,8 @@ def _load_entities(
     media = load_media(mapping, base_dir=base) if has_entity(mapping, "media") else []
     rights = load_rights(mapping, base_dir=base) if has_entity(mapping, "rights") else []
     locations = load_locations(mapping, base_dir=base) if has_entity(mapping, "locations") else []
-    return objects, media, rights, locations, object_field_sources(mapping)
+    agents = load_agents(mapping, base_dir=base) if has_entity(mapping, "agents") else []
+    return objects, media, rights, locations, agents, object_field_sources(mapping)
 
 
 def _print_console_summary(objects: list, findings: list) -> None:  # type: ignore[type-arg]

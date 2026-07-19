@@ -12,8 +12,10 @@ import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from pathlib import Path
 
 from collection_integrity.canonical.models import (
+    AgentOrMaker,
     CollectionObject,
     LocationRecord,
     MediaAsset,
@@ -41,11 +43,17 @@ class RuleContext:
     media: list[MediaAsset] = field(default_factory=list)
     rights: list[RightsRecord] = field(default_factory=list)
     locations: list[LocationRecord] = field(default_factory=list)
+    agents: list[AgentOrMaker] = field(default_factory=list)
     required_fields: list[str] = field(default_factory=list)
     # object field name -> allowed values (VOCAB001). Empty means the check is inactive.
     controlled_vocabularies: dict[str, list[str]] = field(default_factory=dict)
     # object canonical field -> source column, for reporting the raw value in SCHEMA001.
     object_field_sources: dict[str, str] = field(default_factory=dict)
+    # Media-file checks (MEDIA001-004). Inactive unless check_media_files is True and a root is set.
+    check_media_files: bool = False
+    media_root: Path | None = None
+    min_image_width: int = 0
+    min_image_height: int = 0
 
 
 class Rule(ABC):
