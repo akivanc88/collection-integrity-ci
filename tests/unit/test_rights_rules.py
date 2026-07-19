@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from collection_integrity.canonical.models import RightsRecord
 from collection_integrity.ingestion.mapper import load_mapping, load_objects, load_rights
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.reference_rules import OrphanRightsReferenceRule
@@ -42,6 +43,94 @@ def test_rights001_no_conflict_when_public_and_permitted() -> None:
     flagged = {f.entity.id for f in findings}
     assert "A1" not in flagged
     assert "A5" not in flagged
+
+
+def _public_object_with_rights(rights: RightsRecord) -> RuleContext:
+    from collection_integrity.canonical.models import CollectionObject, SourceRef
+
+    ref = SourceRef(
+        source_name="t",
+        source_file="t.csv",
+        source_record_id="X",
+        source_hash="x",
+        ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+    )
+    obj = CollectionObject(
+        object_id="OBJ-X",
+        publication_status="public",
+        rights_id=rights.rights_id,
+        source_ref=ref,
+    )
+    return RuleContext(objects=[obj], rights=[rights])
+
+
+def test_rights001_conflict_from_publication_allowed_false_alone() -> None:
+    from collection_integrity.canonical.models import RightsRecord, SourceRef
+
+    # rights_status is permissive-looking and review not required, so ONLY publication_allowed=False
+    # can trigger the conflict — this isolates that condition.
+    rights = RightsRecord(
+        rights_id="R-A",
+        rights_status="licensed",
+        publication_allowed=False,
+        review_required=False,
+        source_ref=SourceRef(
+            source_name="t",
+            source_file="r.csv",
+            source_record_id="R-A",
+            source_hash="x",
+            ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+        ),
+    )
+    findings = PublicationRightsConflictRule().evaluate(
+        _public_object_with_rights(rights), severity="critical"
+    )
+    assert [f.entity.id for f in findings] == ["OBJ-X"]
+
+
+def test_rights001_conflict_from_review_required_alone() -> None:
+    from collection_integrity.canonical.models import RightsRecord, SourceRef
+
+    # publication_allowed=True and status permissive, so ONLY review_required=True can trigger it.
+    rights = RightsRecord(
+        rights_id="R-B",
+        rights_status="licensed",
+        publication_allowed=True,
+        review_required=True,
+        source_ref=SourceRef(
+            source_name="t",
+            source_file="r.csv",
+            source_record_id="R-B",
+            source_hash="x",
+            ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+        ),
+    )
+    findings = PublicationRightsConflictRule().evaluate(
+        _public_object_with_rights(rights), severity="critical"
+    )
+    assert [f.entity.id for f in findings] == ["OBJ-X"]
+
+
+def test_rights001_no_conflict_when_fully_permissive() -> None:
+    from collection_integrity.canonical.models import RightsRecord, SourceRef
+
+    rights = RightsRecord(
+        rights_id="R-C",
+        rights_status="public_domain",
+        publication_allowed=True,
+        review_required=False,
+        source_ref=SourceRef(
+            source_name="t",
+            source_file="r.csv",
+            source_record_id="R-C",
+            source_hash="x",
+            ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+        ),
+    )
+    findings = PublicationRightsConflictRule().evaluate(
+        _public_object_with_rights(rights), severity="critical"
+    )
+    assert findings == []
 
 
 def test_rights001_default_severity_is_critical() -> None:

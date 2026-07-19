@@ -496,3 +496,27 @@ with guard tests asserting REF001/REF002/RIGHTS001 each produce their expected f
 
 **Next:** commit, then VL-06 mutation on REF002 + RIGHTS001 (recorded next loop). Phase 2 rule
 count after this slice: 5 of ~15.
+
+---
+
+## 2026-07-18 — Loop 11: VL-06 mutation on Slice D found and closed two RIGHTS001 gaps
+
+**Slice:** Mutation-test REF002 + RIGHTS001 (Slice D's second validation).
+
+**Mutations tried (8):** REF002 treat-all-valid (killed), REF002 weaken-severity (killed),
+RIGHTS001 ignore-public-filter (killed), RIGHTS001 flag-even-when-permitted (killed), RIGHTS001
+ignore-review_required (**SURVIVED**), RIGHTS001 ignore-publication_allowed (**SURVIVED**),
+RIGHTS001 double-report-missing-rights (killed), RIGHTS001 weaken-severity (killed).
+
+The two survivors were real gaps: the existing tests' conflict fixture (R-2) had
+publication_allowed=false AND rights_status=restricted, so either condition alone still produced
+the finding — neither the `review_required` nor the `publication_allowed` clause was independently
+tested. Added three in-memory tests that isolate each clause: publication_allowed=false with a
+permissive status/no review; review_required=true with publication allowed and permissive status;
+and a fully-permissive control. Re-ran: **8/8 killed, zero survivors.**
+
+Slice D validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 5 of ~15
+(CORE001, CORE002, REF001, REF002, RIGHTS001).
+
+**Next slice:** Slice E — `LocationRecord` entity + LOC001 (multiple current locations) + LOC002
+(missing parents / cycles in the location hierarchy), with injectors and two validated iterations.
