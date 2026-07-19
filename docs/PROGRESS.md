@@ -844,3 +844,36 @@ test genuinely guards the sanitization.
 Slice J validation approved (fidelity + safety + VL-06).
 
 **Next slice:** Slice K — SARIF 2.1.0 output with a structural validation test.
+
+---
+
+## 2026-07-19 — Loop 20: Slice K — SARIF 2.1.0 output
+
+**Slice:** Emit findings as SARIF 2.1.0 so a GitHub code-scanning upload annotates source files.
+
+**Files created/changed:** `reporting/sarif_report.py` (severity->level map: critical/high=error,
+medium=warning, low=note; driver with tool name/version + declared rules; results with ruleId +
+ruleIndex, level, message, physicalLocation from evidence source_file/row, and the stable
+fingerprint as a partialFingerprint; any finding whose rule wasn't in the passed metadata is still
+declared so no result dangles); `cli.py` writes `results.sarif`. Tests: `test_sarif_report.py`
+(level mapping, top-level structure, every result well-formed + references a declared rule +
+ruleIndex matches, location maps file/row, unknown-rule-still-declared), CLI integration assertion.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 156 passed
+uv run ruff check .; uv run mypy src   # clean (37 source files)
+uv run collection-ci scan --objects-csv benchmarks/mini/objects_dirty.csv --output-dir <d>
+  # -> results.sarif: version 2.1.0, 15 declared rules, 8 results, level=error,
+  #    location objects_dirty.csv row 10, partialFingerprint present
+```
+
+**Iteration 1 (structural validation):** the SARIF validates structurally — version 2.1.0, one
+run, a driver with declared rules, and every result carries a valid level, a message, a
+partialFingerprint, and a ruleId/ruleIndex that resolves to a declared rule. Source locations map
+the evidence file + row.
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the SARIF writer. Then Slice L (baselines + --only-new, VL-03).

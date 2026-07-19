@@ -46,6 +46,7 @@ from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.reporting.csv_report import write_findings_csv
 from collection_integrity.reporting.html_report import write_html_report
 from collection_integrity.reporting.json_report import write_findings_json
+from collection_integrity.reporting.sarif_report import write_sarif_report
 from collection_integrity.reporting.summary import write_summary_json
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.core_rules import REQUIRABLE_OBJECT_FIELDS
@@ -189,6 +190,11 @@ def scan(
         json.dumps(manifest_dict, indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
     write_html_report(findings, manifest_dict, input_counts, output_dir / "report.html")
+    write_sarif_report(
+        findings,
+        [(r.rule.id, r.rule.name, r.rule.version) for r in registry.enabled_rules()],
+        output_dir / "results.sarif",
+    )
 
     _print_console_summary(objects, findings)
     console.print(f"\nWrote {len(findings)} finding(s) to [bold]{output_dir}[/bold]")

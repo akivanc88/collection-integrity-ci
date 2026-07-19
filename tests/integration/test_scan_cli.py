@@ -185,8 +185,12 @@ def test_scan_writes_all_report_outputs(tmp_path: Path) -> None:
         "summary.json",
         "run_manifest.json",
         "report.html",
+        "results.sarif",
     ):
         assert (output_dir / name).is_file(), f"missing {name}"
+    sarif = json.loads((output_dir / "results.sarif").read_text(encoding="utf-8"))
+    assert sarif["version"] == "2.1.0"
+    assert sarif["runs"][0]["results"]
     html = (output_dir / "report.html").read_text(encoding="utf-8")
     assert 'src="http' not in html and 'href="http' not in html  # self-contained
 
