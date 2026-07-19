@@ -285,6 +285,14 @@ def object_field_sources(mapping: DatasetMapping) -> dict[str, str]:
     return {canonical: fm.source for canonical, fm in entity.fields.items()}
 
 
+def resolve_entity_files(mapping: DatasetMapping, base_dir: Path) -> list[Path]:
+    """Resolved paths of every entity data file the mapping references (for manifest hashing)."""
+    base_path = Path(mapping.dataset.base_path)
+    if not base_path.is_absolute():
+        base_path = base_dir / base_path
+    return [base_path / entity.file for entity in mapping.entities.values()]
+
+
 def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> CollectionObject:
     def listing(name: str) -> list[str]:
         value = mapped.get(name)

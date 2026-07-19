@@ -759,3 +759,39 @@ af6034f..(this loop), none pushed (no git remote).
 **Next (Phase 3):** reports (CSV/HTML/SARIF/run-manifest), baseline comparison + `--only-new`
 (VL-03), the `collection-ci benchmark` CLI command, full clean/dirty example datasets, and the
 adversarial (VL-04) and fuzz (VL-05) robustness loops.
+
+---
+
+## 2026-07-19 — Loop 18: Slice I — structured report outputs (CSV + summary + run manifest)
+
+**Slice:** Phase 3 goal (complete all Phase 3 slices, validate on AI-generated data, >=2 iterations
+each). Slice I adds the non-visual report outputs beside findings.json.
+
+**Files created/changed:** `reporting/json_report.py` (refactored out of the CLI),
+`reporting/csv_report.py` (flattened columns + a JSON evidence column, rows sorted by fingerprint),
+`reporting/summary.py` (counts by severity/rule + input counts), `engine/run_manifest.py`
+(software version, command, run id, timestamps, elapsed, input + config file sha256 hashes, enabled
+rules + versions, severity counts, network/AI = False, environment); `ingestion/mapper.py`
+(`resolve_entity_files` for manifest hashing); `cli.py` now times the run and writes findings.json,
+findings.csv, summary.json, run_manifest.json. Tests: `test_reports_structured.py`,
+`test_report_fidelity.py`, extended `test_scan_cli.py`.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 143 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (35 source files)
+uv run collection-ci scan --objects-csv benchmarks/mini/objects_dirty.csv --output-dir <d>
+  # -> findings.json/.csv, summary.json, run_manifest.json; manifest has input hash,
+  #    15 enabled rules, severity {critical:4, high:4}, network/ai = False
+```
+
+**Iteration 1 (fidelity + determinism on AI data):** on the synthetic dirty dataset, JSON and CSV
+reports capture exactly the finding fingerprint set with no loss; summary counts match; and writing
+each report twice is byte-identical (the property CSV/JSON baselines depend on). Manifest records
+the input file hash and the network/AI=False flags.
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the report writers. Then Slice J (standalone HTML report).

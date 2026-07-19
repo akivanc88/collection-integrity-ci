@@ -11,6 +11,9 @@ the CSV/HTML/SARIF/manifest report formats are tracked in docs/BACKLOG.md.
 from __future__ import annotations
 
 import json
+import time
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Annotated
 
@@ -25,6 +28,7 @@ from collection_integrity.canonical.models import (
     MediaAsset,
     RightsRecord,
 )
+from collection_integrity.engine.run_manifest import build_run_manifest, manifest_to_dict
 from collection_integrity.engine.run_store import RunStore, summarize
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
 from collection_integrity.ingestion.mapper import (
@@ -36,8 +40,12 @@ from collection_integrity.ingestion.mapper import (
     load_objects,
     load_rights,
     object_field_sources,
+    resolve_entity_files,
 )
 from collection_integrity.ingestion.readers import IngestionError
+from collection_integrity.reporting.csv_report import write_findings_csv
+from collection_integrity.reporting.json_report import write_findings_json
+from collection_integrity.reporting.summary import write_summary_json
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.core_rules import REQUIRABLE_OBJECT_FIELDS
 from collection_integrity.rules.registry import RuleRegistry
@@ -110,6 +118,10 @@ def scan(
         console.print("[red]Provide exactly one of --objects-csv or --mapping.[/red]")
         raise typer.Exit(code=2)
 
+    started = time.monotonic()
+    started_at = datetime.now(UTC).isoformat()
+    run_id = uuid.uuid4().hex
+
     required_fields = required_field if required_field else DEFAULT_REQUIRED_FIELDS
     unknown = [f for f in required_fields if f not in REQUIRABLE_OBJECT_FIELDS]
     if unknown:
@@ -143,19 +155,43 @@ def scan(
         min_image_height=min_image_height,
     )
     findings = registry.evaluate(ctx)
+    ended_at = datetime.now(UTC).isoformat()
+    elapsed = time.monotonic() - started
+
+    input_counts = {
+        "objects": len(objects),
+        "media": len(media),
+        "rights": len(rights),
+        "locations": len(locations),
+        "agents": len(agents),
+    }
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    findings_path = output_dir / "findings.json"
-    findings_path.write_text(
-        json.dumps([f.model_dump(mode="json") for f in findings], indent=2, sort_keys=True) + "\n",
-        encoding="utf-8",
+    write_findings_json(findings, output_dir / "findings.json")
+    write_findings_csv(findings, output_dir / "findings.csv")
+    write_summary_json(findings, input_counts, output_dir / "summary.json")
+
+    input_files, config_files = _report_source_files(objects_csv, mapping)
+    manifest = build_run_manifest(
+        command="collection-ci scan",
+        run_id=run_id,
+        started_at=started_at,
+        ended_at=ended_at,
+        elapsed_seconds=elapsed,
+        input_files=input_files,
+        config_files=config_files,
+        enabled_rules=[(r.rule.id, r.rule.version) for r in registry.enabled_rules()],
+        findings=findings,
+    )
+    (output_dir / "run_manifest.json").write_text(
+        json.dumps(manifest_to_dict(manifest), indent=2, sort_keys=True) + "\n", encoding="utf-8"
     )
 
     _print_console_summary(objects, findings)
-    console.print(f"\nWrote {len(findings)} finding(s) to [bold]{findings_path}[/bold]")
+    console.print(f"\nWrote {len(findings)} finding(s) to [bold]{output_dir}[/bold]")
 
     if run_store is not None:
-        record_path = RunStore(run_store).save(summarize(findings))
+        record_path = RunStore(run_store).save(summarize(findings, run_id=run_id))
         console.print(f"Recorded run to [bold]{record_path}[/bold]")
 
     if fail_on == "none":
@@ -198,6 +234,17 @@ def _load_entities(
     locations = load_locations(mapping, base_dir=base) if has_entity(mapping, "locations") else []
     agents = load_agents(mapping, base_dir=base) if has_entity(mapping, "agents") else []
     return objects, media, rights, locations, agents, object_field_sources(mapping)
+
+
+def _report_source_files(
+    objects_csv: Path | None, mapping_path: Path | None
+) -> tuple[list[Path], list[Path]]:
+    """(input data files, config files) to hash into the run manifest."""
+    if objects_csv is not None:
+        return [objects_csv], []
+    assert mapping_path is not None
+    mapping = load_mapping(mapping_path)
+    return resolve_entity_files(mapping, mapping_path.parent), [mapping_path]
 
 
 def _print_console_summary(objects: list, findings: list) -> None:  # type: ignore[type-arg]

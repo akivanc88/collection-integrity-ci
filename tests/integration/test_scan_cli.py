@@ -162,6 +162,34 @@ def test_scan_requires_exactly_one_input(tmp_path: Path) -> None:
     assert both.exit_code == 2
 
 
+def test_scan_writes_all_report_outputs(tmp_path: Path) -> None:
+    output_dir = tmp_path / "scan"
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--objects-csv",
+            str(FIXTURES / "objects_duplicate_accession.csv"),
+            "--output-dir",
+            str(output_dir),
+            "--fail-on",
+            "none",
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    for name in ("findings.json", "findings.csv", "summary.json", "run_manifest.json"):
+        assert (output_dir / name).is_file(), f"missing {name}"
+
+    manifest = json.loads((output_dir / "run_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["network_access_used"] is False
+    assert manifest["ai_providers_used"] is False
+    assert manifest["input_hashes"]  # the objects CSV was hashed
+    summary = json.loads((output_dir / "summary.json").read_text(encoding="utf-8"))
+    assert summary["input_counts"]["objects"] == 5
+
+
 def test_scan_persists_run_to_store(tmp_path: Path) -> None:
     store_dir = tmp_path / "store"
 
