@@ -680,7 +680,16 @@ fixed). DATE002 — unit tests cover production-before-birth, production-after-d
 (no finding), and imprecise-dates (inactive). Path-traversal refusal is tested
 (`../../etc/passwd` is never followed).
 
-**Iteration 2 (VL-06 mutation):** run after commit (next loop).
+**Iteration 2 (VL-06 mutation):** ran a mutation loop on MEDIA001-004, the path-resolution guard,
+and DATE002 (7 mutations): never-flag-missing, MEDIA002 off-by-one, MEDIA003 flipped dimension
+check, never-flag-unreadable, allow-path-traversal, DATE002 ignore-before-birth,
+ignore-after-death. **7/7 killed on the first pass, zero survivors** — notably the
+allow-path-traversal mutant was caught by the traversal-refusal test. VL-06 met for Slice G with no
+new gaps.
 
-**Next:** commit, VL-06 mutation on MEDIA001-004 + DATE002. Phase 2 rule count: **15 of 15** — the
-full initial rule set from Section 11 is implemented. Slice H (run store) is the last Phase 2 item.
+Slice G validation approved (accuracy + VL-06). Phase 2 rule count: **15 of 15** — the full initial
+rule set from Section 11 is implemented (CORE001/002, SCHEMA001, REF001/002, LOC001/002,
+RIGHTS001, DATE001/002, VOCAB001, MEDIA001/002/003/004).
+
+**Next slice:** Slice H — the run store (persist scan records/findings for history), the last
+remaining Phase 2 checklist item.
