@@ -948,7 +948,12 @@ uv run collection-ci benchmark --output-dir <d>
 is deterministic by seed (identical per-rule metrics and finding count across two runs). The CLI
 command writes `benchmark_report.json` and exits 0 only when the target is met (1 otherwise).
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** mutation loop on the benchmark runner (4 mutations: meets_target
+always-true, skip field-error injection, drop raw_fields, don't parse start date). First pass
+**1 survivor** (meets_target only tested on the happy path). Added a negative test with an
+underperforming rule -> meets_target False. Re-ran: **4/4 killed.**
 
-**Next:** commit, VL-06 mutation on the benchmark runner. Then Slice N (full example datasets +
-e2e + demo workflow + Phase 3 CI steps).
+Slice M validation approved (accuracy + determinism + VL-06).
+
+**Next slice:** Slice N — full clean/dirty example datasets, end-to-end tests, a demo workflow
+(docs/DEMO.md), and the Phase 3 CI steps (SARIF validation, HTML artifact upload, benchmark).
