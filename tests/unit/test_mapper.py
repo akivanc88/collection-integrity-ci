@@ -88,5 +88,23 @@ def test_invalid_json_array_raises(tmp_path: Path) -> None:
     )
     mapping = load_mapping(mapping_file)
 
-    with pytest.raises(IngestionError):
+    # Assert the specific array guard fires, not just any IngestionError — a top-level object
+    # must be rejected as "not an array", distinct from the per-record "not a JSON object" check.
+    with pytest.raises(IngestionError, match="expected a JSON array"):
+        load_objects(mapping, base_dir=tmp_path)
+
+
+def test_empty_mapped_object_id_raises(tmp_path: Path) -> None:
+    (tmp_path / "obj.csv").write_text("id,acc\n,2001.1.1\n", encoding="utf-8")
+    mapping_file = tmp_path / "m.yaml"
+    mapping_file.write_text(
+        "version: 1\n"
+        "dataset:\n  name: x\n  format: csv\n  base_path: .\n"
+        "entities:\n  objects:\n    file: obj.csv\n    primary_key: object_id\n"
+        "    fields:\n      object_id: id\n      accession_number: acc\n",
+        encoding="utf-8",
+    )
+    mapping = load_mapping(mapping_file)
+
+    with pytest.raises(IngestionError, match="empty mapped object_id"):
         load_objects(mapping, base_dir=tmp_path)

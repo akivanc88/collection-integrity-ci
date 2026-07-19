@@ -338,3 +338,41 @@ complete and approved.
 **Next slice:** run VL-06 mutation on the mapper/readers (post-commit), then continue the rule set
 (REF001 orphan media -> object) which will require the `MediaAsset` model and multi-entity
 ingestion.
+
+---
+
+## 2026-07-18 — Loop 7: VL-06 mutation on Slice B found and closed two real test gaps
+
+**Slice:** Run the VL-06 mutation loop against the Slice B ingestion code (mapper + readers) — the
+loop that validates the *tests*, not just the code.
+
+**Mutations tried and initial result:**
+
+1. `split_pipe` no longer splits — killed
+2. empty mapped object_id no longer rejected — **SURVIVED**
+3. raw fields dropped from provenance — killed
+4. CSV header row offset wrong (`start=2` -> `start=1`) — killed
+5. JSON non-array not rejected (`isinstance(data, list)` guard bypassed) — **SURVIVED**
+
+Two survivors were genuine test gaps: (2) had no test asserting an empty mapped object_id raises;
+(5) my existing `test_invalid_json_array_raises` passed a top-level object, which was still caught
+by the *per-record* "not a JSON object" check, so the array guard itself was untested (the mutant
+survived because a different check masked it).
+
+**Fix (strengthened tests, code unchanged):** added `test_empty_mapped_object_id_raises` and
+tightened `test_invalid_json_array_raises` to assert the specific "expected a JSON array" message
+so the array guard is isolated. Re-ran the mutation loop: **5/5 killed, zero survivors.**
+
+```bash
+uv run pytest tests/unit/test_mapper.py -q   # 8 passed
+# mutation loop (scratchpad, reverted via git checkout): all 5 mutants killed
+uv run pytest -q                              # 45 passed
+```
+
+This is VL-06 behaving exactly as designed — it caught weaknesses in the suite that green tests
+had hidden, and the loop closed them. Slice B now has both accuracy (Loop 6) and mutation (this
+loop) validation approved.
+
+**Next slice:** REF001 (orphan media -> object reference), which requires adding the `MediaAsset`
+canonical model, multi-entity ingestion (a second mapped entity), and a matching injector so its
+accuracy can be measured on the synthetic dataset.
