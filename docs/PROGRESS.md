@@ -882,3 +882,34 @@ Slice K validation approved (structural validation + VL-06).
 
 **Next slice:** Slice L — baseline comparison (new/unchanged/resolved) + `--only-new`, implementing
 the VL-03 baseline round-trip loop.
+
+---
+
+## 2026-07-19 — Loop 21: Slice L — baselines + --only-new (VL-03 now active)
+
+**Slice:** Compare a scan against a prior findings.json by fingerprint (new/unchanged/resolved),
+with `--only-new` making the failure threshold consider only new findings.
+
+**Files created/changed:** `engine/baselines.py` (`load_baseline_fingerprints`, `classify` ->
+`BaselineComparison` with counts); `cli.py` (`--baseline`, `--only-new`; prints the comparison,
+writes `baseline_comparison.json`, and restricts the threshold to new findings under --only-new;
+the full reports still list every finding, per the brief). Tests: `test_baselines.py` (unit) and
+`tests/e2e/test_baseline_roundtrip.py` (the VL-03 loop end-to-end).
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 161 passed
+uv run ruff check .; uv run mypy src   # clean (38 source files)
+# manual round-trip: rescan identical input with --baseline --only-new -> "0 new, 8 unchanged,
+#   0 resolved", exit 0
+```
+
+**Iteration 1 = VL-03 done:** the end-to-end round-trip passes on AI-generated data: (1) rescan of
+identical input with `--only-new` reports zero new and exits 0 even at `--fail-on critical`;
+(2) adding one fresh duplicate accession yields >=1 new and exit 1; (3) repairing a pre-existing
+missing field yields >=1 resolved vs the baseline. This is exactly the VL-03 loop's done condition.
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the baseline classifier. Then Slice M (benchmark CLI command).

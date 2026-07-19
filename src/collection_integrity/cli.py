@@ -28,6 +28,11 @@ from collection_integrity.canonical.models import (
     MediaAsset,
     RightsRecord,
 )
+from collection_integrity.engine.baselines import (
+    BaselineError,
+    classify,
+    load_baseline_fingerprints,
+)
 from collection_integrity.engine.run_manifest import build_run_manifest, manifest_to_dict
 from collection_integrity.engine.run_store import RunStore, summarize
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
@@ -106,6 +111,18 @@ def scan(
         Path | None,
         typer.Option(help="Persist this run's summary + fingerprints under this directory."),
     ] = None,
+    baseline: Annotated[
+        Path | None,
+        typer.Option(
+            help="A prior findings.json to compare against (classify new/unchanged/resolved)."
+        ),
+    ] = None,
+    only_new: Annotated[
+        bool,
+        typer.Option(
+            "--only-new", help="With --baseline, the fail threshold considers only new findings."
+        ),
+    ] = False,
 ) -> None:
     """Scan collection objects and report deterministic integrity findings.
 
@@ -196,6 +213,24 @@ def scan(
         output_dir / "results.sarif",
     )
 
+    # Findings that count toward the failure threshold: all, or only-new against a baseline.
+    threshold_findings = findings
+    if baseline is not None:
+        try:
+            baseline_fps = load_baseline_fingerprints(baseline)
+        except BaselineError as exc:
+            console.print(f"[red]{exc}[/red]")
+            raise typer.Exit(code=2) from exc
+        comparison = classify(findings, baseline_fps)
+        console.print(
+            f"Baseline: [bold]{comparison.counts['new']}[/bold] new, "
+            f"{comparison.counts['unchanged']} unchanged, "
+            f"{comparison.counts['resolved']} resolved."
+        )
+        _write_baseline_summary(comparison, output_dir / "baseline_comparison.json")
+        if only_new:
+            threshold_findings = comparison.new
+
     _print_console_summary(objects, findings)
     console.print(f"\nWrote {len(findings)} finding(s) to [bold]{output_dir}[/bold]")
 
@@ -206,9 +241,21 @@ def scan(
     if fail_on == "none":
         raise typer.Exit(code=0)
     threshold = SEVERITY_ORDER[fail_on]
-    if any(SEVERITY_ORDER[f.severity] >= threshold for f in findings):
+    if any(SEVERITY_ORDER[f.severity] >= threshold for f in threshold_findings):
         raise typer.Exit(code=1)
     raise typer.Exit(code=0)
+
+
+def _write_baseline_summary(comparison: object, path: Path) -> None:
+    from collection_integrity.engine.baselines import BaselineComparison
+
+    assert isinstance(comparison, BaselineComparison)
+    payload = {
+        "counts": comparison.counts,
+        "new_fingerprints": sorted(f.fingerprint for f in comparison.new),
+        "resolved_fingerprints": sorted(comparison.resolved_fingerprints),
+    }
+    path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
 def _load_entities(
