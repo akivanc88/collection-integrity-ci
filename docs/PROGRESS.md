@@ -910,6 +910,11 @@ identical input with `--only-new` reports zero new and exits 0 even at `--fail-o
 (2) adding one fresh duplicate accession yields >=1 new and exit 1; (3) repairing a pre-existing
 missing field yields >=1 resolved vs the baseline. This is exactly the VL-03 loop's done condition.
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** mutation loop on the baseline classifier (4 mutations: invert new
+membership, invert unchanged membership, resolved wrong direction, accept non-array baseline).
+**4/4 killed on the first pass.**
 
-**Next:** commit, VL-06 mutation on the baseline classifier. Then Slice M (benchmark CLI command).
+Slice L validation approved (VL-03 e2e + VL-06). VL-03 is now `active`.
+
+**Next slice:** Slice M — the `collection-ci benchmark` CLI command (inject errors, scan, score
+precision/recall/F1 per rule, write a report).

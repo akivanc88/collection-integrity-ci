@@ -24,7 +24,7 @@ on a later phase's features).
 | VL-03 | Baseline round-trip | Regression behavior | active (e2e: zero-new / one-new / one-resolved) |
 | VL-04 | Threat-model adversarial | Robustness to hostile input | partial (media path-traversal refusal tested) |
 | VL-05 | Fuzz/property contract | Crash-freedom, exit-code contract | pending (Phase 2) |
-| VL-06 | Test-strength (mutation) | The test suite itself | active (found+closed 13 real gaps to date) |
+| VL-06 | Test-strength (mutation) | The test suite itself | active (found+closed 13 real gaps to date (Slices K, L clean on first pass)) |
 | VL-07 | Coverage ratchet | Test breadth over time | pending (CI wiring) |
 | VL-08 | README-executes | Honest documentation | partial |
 | VL-09 | Progress audit | Recorded claims vs. reality | active |
