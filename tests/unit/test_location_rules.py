@@ -50,6 +50,35 @@ def test_loc002_valid_nodes_not_flagged() -> None:
     assert "LOC-GALLERY-2" not in flagged
 
 
+def test_loc001_ignores_non_current_assignments() -> None:
+    from collection_integrity.canonical.models import LocationRecord, SourceRef
+
+    def assignment(loc_id: str, obj: str, current: bool) -> LocationRecord:
+        return LocationRecord(
+            location_id=loc_id,
+            object_id=obj,
+            is_current=current,
+            source_ref=SourceRef(
+                source_name="t",
+                source_file="l.csv",
+                source_record_id=loc_id,
+                source_hash="x",
+                ingested_at="2026-01-01T00:00:00Z",  # type: ignore[arg-type]
+            ),
+        )
+
+    # OBJ-9 has two assignments but only one is current -> not a multiple-current conflict.
+    ctx = RuleContext(
+        objects=[],
+        locations=[
+            assignment("L1", "OBJ-9", True),
+            assignment("L2", "OBJ-9", False),
+        ],
+    )
+    findings = MultipleCurrentLocationsRule().evaluate(ctx, severity="high")
+    assert findings == []
+
+
 def test_location_rule_default_severities() -> None:
     from collection_integrity.rules.registry import RuleRegistry
 

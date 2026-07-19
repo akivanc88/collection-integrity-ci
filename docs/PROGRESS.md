@@ -559,3 +559,25 @@ error class; all 7 rules pass stable + shuffled (four lists shuffled independent
 assert the expected finding counts for REF001/REF002/RIGHTS001/LOC001/LOC002.
 
 **Next:** commit, then VL-06 mutation on LOC001/LOC002 (next loop). Phase 2 rule count: 7 of ~15.
+
+---
+
+## 2026-07-18 — Loop 13: VL-06 mutation on Slice E found and closed one LOC001 gap
+
+**Slice:** Mutation-test LOC001 + LOC002 (Slice E's second validation).
+
+**Mutations tried (7):** LOC001 off-by-one (killed), LOC001 ignore-is_current-filter
+(**SURVIVED**), LOC001 weaken-severity (killed), LOC002 treat-all-parents-present (killed), LOC002
+skip-cycle-detection (killed), LOC002 cycle-check-any-chain (killed), LOC002 weaken-severity
+(killed).
+
+The survivor was a real gap: the location fixture's assignments were all `is_current=true`, so
+dropping the is_current filter didn't change the result. Added an in-memory test where an object
+has one current and one non-current assignment (must not be flagged). Re-ran: **7/7 killed.**
+
+Slice E validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 7 of ~15
+(CORE001/002, REF001/002, RIGHTS001, LOC001/002).
+
+**Next slice:** Slice F — object-only rules DATE001 (inverted production date range), VOCAB001
+(value outside a configured controlled vocabulary), SCHEMA001 (value not parseable to its declared
+type). These need only the objects entity, so no new model or multi-entity work.
