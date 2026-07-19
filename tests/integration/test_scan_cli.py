@@ -30,7 +30,7 @@ def test_scan_clean_data_exits_zero_and_writes_empty_findings(tmp_path: Path) ->
     assert findings == []
 
 
-def test_scan_dirty_data_exits_nonzero_and_writes_finding(tmp_path: Path) -> None:
+def test_scan_dirty_data_exits_nonzero_and_writes_findings(tmp_path: Path) -> None:
     output_dir = tmp_path / "scan"
 
     result = runner.invoke(
@@ -46,12 +46,57 @@ def test_scan_dirty_data_exits_nonzero_and_writes_finding(tmp_path: Path) -> Non
 
     assert result.exit_code == 1, result.output
     # The rich console table may truncate long rule IDs to fit terminal width, so only assert
-    # the stable prefix here; the full rule ID is checked in findings.json below.
+    # the stable prefix here; the full rule IDs are checked in findings.json below.
     assert "CORE001" in result.output
 
     findings = json.loads((output_dir / "findings.json").read_text(encoding="utf-8"))
-    assert len(findings) == 1
-    assert findings[0]["rule"]["id"] == "CORE001_DUPLICATE_ACCESSION_NUMBER"
+    rule_ids = {f["rule"]["id"] for f in findings}
+    # Default required fields include accession_number, so OBJ-004/OBJ-005 (blank accession)
+    # trigger CORE002 in addition to the CORE001 duplicate.
+    assert rule_ids == {
+        "CORE001_DUPLICATE_ACCESSION_NUMBER",
+        "CORE002_REQUIRED_FIELD_MISSING",
+    }
+
+
+def test_scan_can_limit_required_fields(tmp_path: Path) -> None:
+    output_dir = tmp_path / "scan"
+
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--objects-csv",
+            str(FIXTURES / "objects_duplicate_accession.csv"),
+            "--output-dir",
+            str(output_dir),
+            "--required-field",
+            "object_name",
+        ],
+    )
+
+    assert result.exit_code == 1, result.output
+    findings = json.loads((output_dir / "findings.json").read_text(encoding="utf-8"))
+    # object_name is populated for every row, so only the CORE001 duplicate remains.
+    rule_ids = {f["rule"]["id"] for f in findings}
+    assert rule_ids == {"CORE001_DUPLICATE_ACCESSION_NUMBER"}
+
+
+def test_scan_rejects_unknown_required_field(tmp_path: Path) -> None:
+    result = runner.invoke(
+        app,
+        [
+            "scan",
+            "--objects-csv",
+            str(FIXTURES / "objects_clean.csv"),
+            "--output-dir",
+            str(tmp_path / "scan"),
+            "--required-field",
+            "bogus_field",
+        ],
+    )
+
+    assert result.exit_code == 2
 
 
 def test_scan_fail_on_none_exits_zero_even_with_findings(tmp_path: Path) -> None:

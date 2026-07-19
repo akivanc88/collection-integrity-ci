@@ -163,3 +163,68 @@ First loop executions to schedule after that lands: VL-06 against CORE001/CORE00
 shuffled-input case.
 
 ---
+
+## 2026-07-18 — Loop 4: Slice A iteration 1 (rule registry + CORE002) + AI-generated benchmark
+
+**Slice:** Goal set via `/goal`: complete the defined slices, validate accuracy on AI-generated
+datasets, ≥2 iterations each with validation approved. This is Slice A iteration 1 plus the
+synthetic dataset the accuracy validation runs against.
+
+**Files created/changed:**
+
+- `rules/base.py` — `Rule` ABC, `RuleContext`, and a `make_finding` factory (fills run-specific
+  id/timestamp + stable fingerprint).
+- `rules/registry.py` — `RuleRegistry` (enable/disable, severity override, stable-order dispatch).
+- `rules/core_rules.py` — ported CORE001 to a `Rule` subclass, added
+  `CORE002_REQUIRED_FIELD_MISSING` (configurable required fields; unknown fields ignored, not
+  fatal).
+- `cli.py` — `scan` now dispatches through the registry; added repeatable `--required-field`
+  (defaults to accession_number + object_name) with validation (exit 2 on unknown field).
+- `benchmark/synthetic.py` — deterministic clean synthetic-object generator (fabricated data,
+  redistributable).
+- `benchmark/injectors.py` — deterministic, non-mutating, disjoint, leakage-free error injector
+  for CORE001/CORE002 with a labeled `InjectionManifest`.
+- `benchmark/metrics.py` — precision/recall/F1 scoring of findings vs. manifest.
+- `benchmark/dataset.py` — CSV writer for object tables.
+- `benchmarks/generate.py` — regenerates committed artifacts.
+- `benchmarks/mini/objects_clean.csv`, `benchmarks/mini/objects_dirty.csv`,
+  `benchmarks/manifests/mini.json` — 60-object dataset, 8 labeled injected errors.
+- Tests: `tests/unit/test_registry.py` (new), rewrote `tests/unit/test_core_rules.py` for the
+  class API + CORE002, extended `tests/integration/test_scan_cli.py`, added
+  `tests/integration/test_benchmark_accuracy.py`.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q            # 30 passed
+uv run ruff check .         # All checks passed!
+uv run ruff format --check .  # 28 files already formatted (after auto-format)
+uv run mypy src             # Success: no issues found in 19 source files
+uv run python benchmarks/generate.py
+  # -> Wrote clean/dirty CSVs + manifest, 8 injected errors
+uv run collection-ci scan --objects-csv benchmarks/mini/objects_dirty.csv --fail-on none
+  # -> 8 findings (4 CORE001 + 4 CORE002), matching the 8 injected errors
+```
+
+**Accuracy validation (VL-01, partial — implemented rules):** on the AI-generated dataset,
+`test_injected_errors_are_detected_with_perfect_precision_and_recall` asserts precision = recall =
+F1 = 1.0 for both CORE001 and CORE002, and `test_clean_dataset_has_zero_findings` asserts zero
+false positives on the clean 60-object dataset. Both pass. Injection is verified non-mutating and
+seed-deterministic by dedicated tests.
+
+**Issue hit and fixed (not weakened):** adding CORE002 to the default registry changed the dirty
+CLI fixture's expected output (blank-accession rows now also trigger CORE002). Updated the
+integration test to assert both rule types appear, and added a `--required-field object_name` case
+proving CORE002 can be scoped — behavior change reflected in tests, not suppressed.
+
+**Limitations:** VL-01 is still partial (only CORE001/CORE002 have injectors); the other Section
+11 rules and their injectors are not built. No `collection-ci benchmark` CLI command yet — scoring
+runs via the test + library, not a user-facing command. This is iteration 1 of Slice A; iteration
+2 (VL-02 shuffled-input parametrized over the registry, and VL-06 mutation testing) is the next
+loop.
+
+**Next slice:** Slice A iteration 2 — run VL-02 (fingerprint determinism incl. shuffled input,
+parametrized over the registry) and VL-06 (mutation testing of each rule's tests); record
+evidence. Then Slice B (mapping layer + JSON adapter).
+
+---

@@ -1,0 +1,79 @@
+{
+  "clean_seed": 7,
+  "count": 60,
+  "errors": [
+    {
+      "after_value": "1982.3.3-22",
+      "before_value": "1992.4.3-32",
+      "entity_id": "OBJ-0032",
+      "entity_type": "object",
+      "error_id": "DUP-ACC-1",
+      "expected_rule_id": "CORE001_DUPLICATE_ACCESSION_NUMBER",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "1981.3.2-21",
+      "before_value": "2005.5.6-45",
+      "entity_id": "OBJ-0045",
+      "entity_type": "object",
+      "error_id": "DUP-ACC-2",
+      "expected_rule_id": "CORE001_DUPLICATE_ACCESSION_NUMBER",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "1969.1.10-9",
+      "before_value": "2012.6.3-52",
+      "entity_id": "OBJ-0052",
+      "entity_type": "object",
+      "error_id": "DUP-ACC-3",
+      "expected_rule_id": "CORE001_DUPLICATE_ACCESSION_NUMBER",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "2006.5.7-46",
+      "before_value": "2011.6.2-51",
+      "entity_id": "OBJ-0051",
+      "entity_type": "object",
+      "error_id": "DUP-ACC-4",
+      "expected_rule_id": "CORE001_DUPLICATE_ACCESSION_NUMBER",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "",
+      "before_value": "1987.3.8-27",
+      "entity_id": "OBJ-0027",
+      "entity_type": "object",
+      "error_id": "MISSING-1",
+      "expected_rule_id": "CORE002_REQUIRED_FIELD_MISSING",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "",
+      "before_value": "Textile",
+      "entity_id": "OBJ-0049",
+      "entity_type": "object",
+      "error_id": "MISSING-2",
+      "expected_rule_id": "CORE002_REQUIRED_FIELD_MISSING",
+      "field": "object_name"
+    },
+    {
+      "after_value": "",
+      "before_value": "1974.2.5-14",
+      "entity_id": "OBJ-0014",
+      "entity_type": "object",
+      "error_id": "MISSING-3",
+      "expected_rule_id": "CORE002_REQUIRED_FIELD_MISSING",
+      "field": "accession_number"
+    },
+    {
+      "after_value": "",
+      "before_value": "Necklace",
+      "entity_id": "OBJ-0018",
+      "entity_type": "object",
+      "error_id": "MISSING-4",
+      "expected_rule_id": "CORE002_REQUIRED_FIELD_MISSING",
+      "field": "object_name"
+    }
+  ],
+  "inject_seed": 11
+}

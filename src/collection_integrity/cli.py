@@ -1,9 +1,9 @@
 """Command-line interface.
 
 Only a minimal `scan` command exists so far: it reads one objects CSV directly (no configurable
-mapping yet) and runs the single implemented rule, CORE001. This is the first vertical slice from
-BUILD_BRIEF.md's Kickoff Prompt, not the full CLI specification in Section 13 — the full
-`--mapping`/`--rules`/multi-entity interface is Phase 2/3 work tracked in docs/BACKLOG.md.
+mapping yet) and runs the enabled deterministic rules through the rule registry. This is an early
+Phase 2 shape, not the full CLI specification in Section 13 — the full `--mapping`/`--rules`/
+multi-entity interface is tracked in docs/BACKLOG.md.
 """
 
 from __future__ import annotations
@@ -17,12 +17,17 @@ from rich.console import Console
 from rich.table import Table
 
 from collection_integrity.ingestion.csv_adapter import CsvIngestionError, load_objects_from_csv
-from collection_integrity.rules.core_rules import check_duplicate_accession_numbers
+from collection_integrity.rules.base import RuleContext
+from collection_integrity.rules.core_rules import REQUIRABLE_OBJECT_FIELDS
+from collection_integrity.rules.registry import RuleRegistry
 
 app = typer.Typer(no_args_is_help=True, add_completion=False)
 console = Console()
 
 SEVERITY_ORDER = {"critical": 3, "high": 2, "medium": 1, "low": 0}
+
+# Default policy-required fields for CORE002 until a ruleset file can configure them (Phase 2).
+DEFAULT_REQUIRED_FIELDS = ["accession_number", "object_name"]
 
 
 @app.callback()
@@ -42,10 +47,25 @@ def scan(
         str,
         typer.Option(help="Minimum severity that fails the run: critical|high|medium|low|none."),
     ] = "critical",
+    required_field: Annotated[
+        list[str] | None,
+        typer.Option(
+            help=(
+                "Object field required by policy (repeatable). Defaults to accession_number and "
+                f"object_name. Allowed: {', '.join(REQUIRABLE_OBJECT_FIELDS)}."
+            )
+        ),
+    ] = None,
 ) -> None:
-    """Scan an objects CSV and report duplicate-accession-number findings."""
+    """Scan an objects CSV and report deterministic integrity findings."""
     if fail_on not in {*SEVERITY_ORDER, "none"}:
         console.print(f"[red]Invalid --fail-on value: {fail_on!r}[/red]")
+        raise typer.Exit(code=2)
+
+    required_fields = required_field if required_field else DEFAULT_REQUIRED_FIELDS
+    unknown = [f for f in required_fields if f not in REQUIRABLE_OBJECT_FIELDS]
+    if unknown:
+        console.print(f"[red]Unknown required field(s): {unknown}[/red]")
         raise typer.Exit(code=2)
 
     if not objects_csv.exists():
@@ -58,7 +78,9 @@ def scan(
         console.print(f"[red]{exc}[/red]")
         raise typer.Exit(code=2) from exc
 
-    findings = check_duplicate_accession_numbers(objects)
+    registry = RuleRegistry.with_defaults()
+    ctx = RuleContext(objects=objects, required_fields=required_fields)
+    findings = registry.evaluate(ctx)
 
     output_dir.mkdir(parents=True, exist_ok=True)
     findings_path = output_dir / "findings.json"
