@@ -723,6 +723,39 @@ record for the dirty benchmark has the expected 8 findings and severity split; a
 confirms identical findings persist identical fingerprint sets (the property baselines will rely
 on).
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** ran a mutation loop on the run store (5 mutations): wrong total, drop
+fingerprint sort, reverse list order, latest-returns-first, empty severity counts. First pass had
+**3 survivors** — the sort/ordering guarantees were untested. Added tests pinning ascending
+fingerprint order (feeding findings in reverse), oldest-first `list_runs`, and `latest` = most
+recent. Re-ran: **5/5 killed.**
 
-**Next:** commit, VL-06 mutation on the run store. This completes the Phase 2 slice set (C-H).
+Slice H validation approved (unit + VL-06).
+
+---
+
+## 2026-07-18 — Phase 2 complete
+
+All Phase 2 slices are done, each with >=2 validated iterations (accuracy on AI-generated data
+and/or VL-02 determinism, plus VL-06 mutation):
+
+- Slice C: multi-entity ingestion + MediaAsset + REF001
+- Slice D: RightsRecord + REF002 + RIGHTS001
+- Slice E: LocationRecord + LOC001 + LOC002
+- Slice F: DATE001 + VOCAB001 + SCHEMA001
+- Slice G: MEDIA001-004 + DATE002 (all 15 Section-11 rules now implemented)
+- Slice H: run store
+
+**Phase 2 checklist (BUILD_BRIEF.md Section 24) status:** CSV + JSON adapters (done), mapping
+engine (done), rule base class + registry (done), initial rules (15/15 done), finding model +
+fingerprints (done), run store (done), console + JSON output (done), comprehensive tests (133
+passing). Validation: VL-01 partial-pass at P=R=1.0 for the 14 injectable rules (DATE002
+unit-tested), VL-02 active over all rules, VL-06 run per slice (found and closed 10 real test gaps
+across the phase).
+
+**Aggregate:** 133 tests passing, ruff + mypy clean, 15 deterministic rules across 6 entity types,
+a synthetic benchmark scoring every injectable rule at precision = recall = 1.0. Commits
+af6034f..(this loop), none pushed (no git remote).
+
+**Next (Phase 3):** reports (CSV/HTML/SARIF/run-manifest), baseline comparison + `--only-new`
+(VL-03), the `collection-ci benchmark` CLI command, full clean/dirty example datasets, and the
+adversarial (VL-04) and fuzz (VL-05) robustness loops.

@@ -7,7 +7,7 @@ from collection_integrity.engine.findings import (
     RuleRef,
     compute_fingerprint,
 )
-from collection_integrity.engine.run_store import RunStore, summarize
+from collection_integrity.engine.run_store import RunStore, RunSummary, summarize
 
 
 def _finding(rule_id: str, entity_id: str, severity: str) -> Finding:
@@ -78,3 +78,35 @@ def test_saved_record_reloads_equal(tmp_path: Path) -> None:
 
     reloaded = store.list_runs()[0]
     assert reloaded == original
+
+
+def test_fingerprints_are_sorted_regardless_of_finding_order() -> None:
+    findings = _sample()
+    # Feed findings in reverse-fingerprint order; the summary must still be ascending-sorted.
+    reversed_findings = sorted(findings, key=lambda f: f.fingerprint, reverse=True)
+
+    summary = summarize(reversed_findings)
+
+    assert summary.fingerprints == sorted(f.fingerprint for f in findings)
+    assert len(set(summary.fingerprints)) >= 2  # the assertion above is non-trivial
+
+
+def _summary(run_id: str, created_at: str) -> RunSummary:
+    return RunSummary(
+        run_id=run_id,
+        created_at=created_at,
+        total_findings=0,
+        severity_counts={},
+        fingerprints=[],
+    )
+
+
+def test_list_runs_is_oldest_first_and_latest_is_most_recent(tmp_path: Path) -> None:
+    store = RunStore(tmp_path)
+    store.save(_summary("late", "2026-02-01T00:00:00+00:00"))
+    store.save(_summary("early", "2026-01-01T00:00:00+00:00"))
+
+    ordered = [r.run_id for r in store.list_runs()]
+    assert ordered == ["early", "late"]
+    assert store.latest() is not None
+    assert store.latest().run_id == "late"
