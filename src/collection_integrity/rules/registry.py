@@ -15,13 +15,19 @@ from collection_integrity.rules.core_rules import (
     DuplicateAccessionNumberRule,
     RequiredFieldMissingRule,
 )
-from collection_integrity.rules.reference_rules import OrphanMediaObjectRule
+from collection_integrity.rules.reference_rules import (
+    OrphanMediaObjectRule,
+    OrphanRightsReferenceRule,
+)
+from collection_integrity.rules.rights_rules import PublicationRightsConflictRule
 
 # All rules known to the engine, in a stable order. New rules are appended here.
 ALL_RULE_CLASSES: tuple[type[Rule], ...] = (
     DuplicateAccessionNumberRule,
     RequiredFieldMissingRule,
     OrphanMediaObjectRule,
+    OrphanRightsReferenceRule,
+    PublicationRightsConflictRule,
 )
 
 

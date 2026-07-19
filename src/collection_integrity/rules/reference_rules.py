@@ -1,7 +1,7 @@
 """Referential-integrity rules (BUILD_BRIEF.md Section 11, items 4-5).
 
-REF001 (orphan media -> object) is implemented. REF002 (orphan rights reference) is tracked in
-docs/BACKLOG.md and lands with the RightsRecord entity.
+REF001 (orphan media -> object) and REF002 (orphan rights reference from an object or media
+record) are implemented here.
 """
 
 from __future__ import annotations
@@ -63,6 +63,65 @@ class OrphanMediaObjectRule(Rule):
                             source_row=media.source_ref.source_row_number,
                             field="object_id",
                             value=media.object_id,
+                        )
+                    ],
+                )
+            )
+        return findings
+
+
+class OrphanRightsReferenceRule(Rule):
+    """REF002: an object or media record references a rights_id that does not exist."""
+
+    rule = RuleRef(
+        id="REF002_ORPHAN_RIGHTS_REFERENCE",
+        name="Orphan rights reference",
+        version="1.0.0",
+    )
+    default_severity: Severity = "high"
+
+    def evaluate(self, ctx: RuleContext, severity: Severity) -> list[Finding]:
+        rights_ids = {r.rights_id for r in ctx.rights}
+
+        # (entity_type, entity_id, rights_id, source_ref) for every entity that names a rights id.
+        referers: list[tuple[str, str, str, object]] = []
+        for obj in ctx.objects:
+            if obj.rights_id:
+                referers.append(("object", obj.object_id, obj.rights_id, obj.source_ref))
+        for media in ctx.media:
+            if media.rights_id:
+                referers.append(("media", media.media_id, media.rights_id, media.source_ref))
+
+        findings: list[Finding] = []
+        for entity_type, entity_id, rights_id, source_ref in sorted(
+            referers, key=lambda r: (r[0], r[1])
+        ):
+            if rights_id in rights_ids:
+                continue
+            findings.append(
+                self.make_finding(
+                    severity=severity,
+                    entity=EntityRef(type=entity_type, id=entity_id, field="rights_id"),
+                    entity_id_for_fingerprint=entity_id,
+                    evidence_keys=[rights_id],
+                    summary=(
+                        f"{entity_type.capitalize()} {entity_id} references rights record "
+                        f"{rights_id!r}, which does not exist."
+                    ),
+                    explanation=(
+                        f"{entity_type.capitalize()} {entity_id} has rights_id={rights_id!r}, but "
+                        f"no rights record with that id is present in the rights entity."
+                    ),
+                    recommendation=(
+                        "Correct the rights_id, restore the missing rights record, or clear the "
+                        "reference according to institutional policy."
+                    ),
+                    evidence=[
+                        EvidenceItem(
+                            source_file=source_ref.source_file,  # type: ignore[attr-defined]
+                            source_row=source_ref.source_row_number,  # type: ignore[attr-defined]
+                            field="rights_id",
+                            value=rights_id,
                         )
                     ],
                 )

@@ -1,0 +1,26 @@
+version: 1
+dataset:
+  name: rights-test
+  format: csv
+  base_path: .
+
+entities:
+  objects:
+    file: objects_with_rights.csv
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+      rights_id: rights
+      publication_status: pub
+
+  rights:
+    file: mapping_rights.csv
+    primary_key: rights_id
+    fields:
+      rights_id: rid
+      rights_status: status
+      publication_allowed: allowed
+      review_required: review

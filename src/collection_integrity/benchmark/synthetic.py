@@ -69,6 +69,12 @@ OBJECT_COLUMNS = ("object_id", "accession_number", "title", "object_name", "depa
 # Column order for the media table this generator emits.
 MEDIA_COLUMNS = ("media_id", "object_id", "path_or_url", "publication_status")
 
+# Column order for the rights table this generator emits.
+RIGHTS_COLUMNS = ("rights_id", "rights_status", "publication_allowed", "review_required")
+
+# Object columns including the rights link + publication status (used by the rights benchmark).
+OBJECT_WITH_RIGHTS_COLUMNS = OBJECT_COLUMNS + ("rights_id", "publication_status")
+
 
 def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
     """Generate `count` internally consistent object rows, deterministically from `seed`."""
@@ -92,6 +98,73 @@ def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
             }
         )
     return rows
+
+
+def generate_clean_rights(count: int, seed: int) -> list[dict[str, str]]:
+    """Generate rights records: a mix of publication-permitting and non-permitting rows.
+
+    Deterministic from `seed`. Roughly half permit publication (public_domain/licensed,
+    publication_allowed=true, no review) and half do not (restricted, publication_allowed=false).
+    """
+    rng = random.Random(seed)
+    rows: list[dict[str, str]] = []
+    for i in range(1, count + 1):
+        permissive = rng.random() < 0.5
+        if permissive:
+            rows.append(
+                {
+                    "rights_id": f"R-{i:03d}",
+                    "rights_status": rng.choice(["public_domain", "licensed", "institution_owned"]),
+                    "publication_allowed": "true",
+                    "review_required": "false",
+                }
+            )
+        else:
+            rows.append(
+                {
+                    "rights_id": f"R-{i:03d}",
+                    "rights_status": rng.choice(["restricted", "unknown", "review_required"]),
+                    "publication_allowed": "false",
+                    "review_required": rng.choice(["true", "false"]),
+                }
+            )
+    return rows
+
+
+def rights_permits_publication(rights_row: dict[str, str]) -> bool:
+    """Mirror of the RIGHTS001 policy, used by the generator/injector to keep clean data clean."""
+    if rights_row.get("publication_allowed", "").strip().lower() != "true":
+        return False
+    if rights_row.get("review_required", "").strip().lower() == "true":
+        return False
+    return rights_row.get("rights_status", "").strip().lower() not in {
+        "restricted",
+        "unknown",
+        "review_required",
+    }
+
+
+def link_objects_to_rights(
+    objects: list[dict[str, str]], rights: list[dict[str, str]], seed: int
+) -> list[dict[str, str]]:
+    """Return object rows augmented with a valid rights_id and a consistent publication_status.
+
+    Clean invariant: an object is only marked ``public`` when its rights record permits
+    publication, so a correct RIGHTS001 finds no conflicts and REF002 finds no orphans here.
+    """
+    rng = random.Random(seed)
+    permits = {r["rights_id"]: rights_permits_publication(r) for r in rights}
+    rights_ids = [r["rights_id"] for r in rights]
+
+    linked: list[dict[str, str]] = []
+    for obj in objects:
+        rid = rng.choice(rights_ids)
+        if permits[rid]:
+            status = rng.choice(["public", "internal", "private"])
+        else:
+            status = rng.choice(["internal", "private"])
+        linked.append({**obj, "rights_id": rid, "publication_status": status})
+    return linked
 
 
 def generate_clean_media(objects: list[dict[str, str]], seed: int) -> list[dict[str, str]]:

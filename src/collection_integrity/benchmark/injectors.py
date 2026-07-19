@@ -8,9 +8,9 @@ findings can be scored against ground truth. Injection is:
 - disjoint (no row receives more than one injected error, so a label maps to exactly one rule),
 - free of label leakage (no marker column is added; the manifest is stored separately).
 
-Injectors exist for the currently implemented rules (CORE001, CORE002 on the objects table;
-REF001 on the media table via `inject_orphan_media`). Injectors for the remaining Section 11 rules
-land alongside those rules.
+Injectors exist for the currently implemented rules: CORE001/CORE002 on objects (`inject_errors`),
+REF001 on media (`inject_orphan_media`), and REF002/RIGHTS001 on objects (`inject_orphan_rights`,
+`inject_publication_conflict`). Injectors for the remaining Section 11 rules land alongside them.
 """
 
 from __future__ import annotations
@@ -57,6 +57,19 @@ class InjectionManifest:
         return {
             e.entity_id for e in self.errors if e.expected_rule_id == "REF001_ORPHAN_MEDIA_OBJECT"
         }
+
+    def expected_ref002_ids(self) -> set[str]:
+        """entity ids a correct REF002 run must flag as having an orphan rights reference."""
+        return {
+            e.entity_id
+            for e in self.errors
+            if e.expected_rule_id == "REF002_ORPHAN_RIGHTS_REFERENCE"
+        }
+
+    def expected_rights001_ids(self) -> set[str]:
+        """entity ids a correct RIGHTS001 run must flag as a publication conflict."""
+        rid = "RIGHTS001_PUBLICATION_CONFLICT"
+        return {e.entity_id for e in self.errors if e.expected_rule_id == rid}
 
 
 def inject_errors(
@@ -163,6 +176,88 @@ def inject_orphan_media(
                 field="object_id",
                 before_value=before,
                 after_value=bogus,
+            )
+        )
+    return rows, errors
+
+
+def inject_orphan_rights(
+    object_rows: list[dict[str, str]],
+    valid_rights_ids: set[str],
+    seed: int,
+    num_orphan: int = 3,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Repoint some objects' rights_id at non-existent rights records (REF002). Non-mutating."""
+    if num_orphan > len(object_rows):
+        raise ValueError(f"need at least {num_orphan} object rows, got {len(object_rows)}")
+
+    rows = copy.deepcopy(object_rows)
+    rng = random.Random(seed)
+    indices = list(range(len(rows)))
+    rng.shuffle(indices)
+
+    errors: list[InjectedError] = []
+    for n in range(num_orphan):
+        idx = indices[n]
+        before = rows[idx].get("rights_id", "")
+        bogus = f"MISSING-RIGHTS-{n + 1}"
+        assert bogus not in valid_rights_ids
+        rows[idx]["rights_id"] = bogus
+        errors.append(
+            InjectedError(
+                error_id=f"ORPHAN-RIGHTS-{n + 1}",
+                expected_rule_id="REF002_ORPHAN_RIGHTS_REFERENCE",
+                entity_type="object",
+                entity_id=rows[idx]["object_id"],
+                field="rights_id",
+                before_value=before,
+                after_value=bogus,
+            )
+        )
+    return rows, errors
+
+
+def inject_publication_conflict(
+    object_rows: list[dict[str, str]],
+    restricted_rights_ids: set[str],
+    seed: int,
+    num_conflict: int = 3,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Flip some non-public objects linked to restricted rights to ``public`` (RIGHTS001).
+
+    Non-mutating. Only objects currently linked to a restricted rights record and not already
+    public are eligible, so each injected error is a genuine, isolated publication conflict.
+    """
+    rows = copy.deepcopy(object_rows)
+    rng = random.Random(seed)
+
+    eligible = [
+        i
+        for i, r in enumerate(rows)
+        if r.get("rights_id") in restricted_rights_ids
+        and r.get("publication_status", "").strip().lower() != "public"
+    ]
+    if num_conflict > len(eligible):
+        raise ValueError(
+            f"need at least {num_conflict} eligible objects (restricted, non-public), "
+            f"got {len(eligible)}"
+        )
+    rng.shuffle(eligible)
+
+    errors: list[InjectedError] = []
+    for n in range(num_conflict):
+        idx = eligible[n]
+        before = rows[idx].get("publication_status", "")
+        rows[idx]["publication_status"] = "public"
+        errors.append(
+            InjectedError(
+                error_id=f"PUB-CONFLICT-{n + 1}",
+                expected_rule_id="RIGHTS001_PUBLICATION_CONFLICT",
+                entity_type="object",
+                entity_id=rows[idx]["object_id"],
+                field="publication_status",
+                before_value=before,
+                after_value="public",
             )
         )
     return rows, errors

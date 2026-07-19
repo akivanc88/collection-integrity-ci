@@ -53,6 +53,10 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
     }
 
     ref001_found = {f.entity.id for f in findings if f.rule.id == "REF001_ORPHAN_MEDIA_OBJECT"}
+    ref002_found = {f.entity.id for f in findings if f.rule.id == "REF002_ORPHAN_RIGHTS_REFERENCE"}
+    rights001_found = {
+        f.entity.id for f in findings if f.rule.id == "RIGHTS001_PUBLICATION_CONFLICT"
+    }
 
     return {
         "CORE001_DUPLICATE_ACCESSION_NUMBER": _metrics(
@@ -65,6 +69,12 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
         ),
         "REF001_ORPHAN_MEDIA_OBJECT": _metrics(
             "REF001_ORPHAN_MEDIA_OBJECT", ref001_found, manifest.expected_ref001_media()
+        ),
+        "REF002_ORPHAN_RIGHTS_REFERENCE": _metrics(
+            "REF002_ORPHAN_RIGHTS_REFERENCE", ref002_found, manifest.expected_ref002_ids()
+        ),
+        "RIGHTS001_PUBLICATION_CONFLICT": _metrics(
+            "RIGHTS001_PUBLICATION_CONFLICT", rights001_found, manifest.expected_rights001_ids()
         ),
     }
 

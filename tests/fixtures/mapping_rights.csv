@@ -1,0 +1,4 @@
+rid,status,allowed,review
+R-1,public_domain,true,false
+R-2,restricted,false,false
+R-3,licensed,true,false

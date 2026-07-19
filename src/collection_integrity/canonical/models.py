@@ -69,3 +69,19 @@ class MediaAsset(BaseModel):
     publication_status: str | None = None
     rights_id: str | None = None
     source_ref: SourceRef
+
+
+class RightsRecord(BaseModel):
+    """A canonical rights/usage record linked to objects or media."""
+
+    model_config = ConfigDict(frozen=True)
+
+    rights_id: str
+    rights_status: str | None = None
+    copyright_holder: str | None = None
+    license_uri: str | None = None
+    credit_line: str | None = None
+    publication_allowed: bool | None = None
+    review_required: bool | None = None
+    expiry_date: date | None = None
+    source_ref: SourceRef

@@ -18,7 +18,12 @@ from collection_integrity.canonical.mappings import (
     FieldMapping,
     coerce_field_mapping,
 )
-from collection_integrity.canonical.models import CollectionObject, MediaAsset, SourceRef
+from collection_integrity.canonical.models import (
+    CollectionObject,
+    MediaAsset,
+    RightsRecord,
+    SourceRef,
+)
 from collection_integrity.ingestion.readers import IngestionError, read_rows
 from collection_integrity.provenance import hash_record
 
@@ -52,6 +57,19 @@ SCALAR_MEDIA_FIELDS = {
     "publication_status",
     "rights_id",
 }
+
+SCALAR_RIGHTS_FIELDS = {
+    "rights_id",
+    "rights_status",
+    "copyright_holder",
+    "license_uri",
+    "credit_line",
+    "publication_allowed",
+    "review_required",
+}
+
+_TRUE = {"true", "1", "yes", "y", "t"}
+_FALSE = {"false", "0", "no", "n", "f"}
 
 # A mapped entity record: the canonical-name -> value dict plus its provenance.
 MappedRecord = tuple[dict[str, str | list[str]], SourceRef]
@@ -159,6 +177,12 @@ def load_media(mapping: DatasetMapping, base_dir: Path) -> list[MediaAsset]:
     return [_build_media(mapped, ref) for mapped, ref in records]
 
 
+def load_rights(mapping: DatasetMapping, base_dir: Path) -> list[RightsRecord]:
+    """Load the `rights` entity described by `mapping` into canonical records."""
+    records = _load_entity_records(mapping, "rights", base_dir, SCALAR_RIGHTS_FIELDS, set())
+    return [_build_rights(mapped, ref) for mapped, ref in records]
+
+
 def has_entity(mapping: DatasetMapping, entity_name: str) -> bool:
     return entity_name in mapping.entities
 
@@ -178,6 +202,18 @@ def _int(mapped: dict[str, str | list[str]], name: str) -> int | None:
         # A non-integer here is a type problem for SCHEMA001 to report later; ingestion keeps the
         # raw value in source_ref.raw_fields and leaves the canonical field unset.
         return None
+
+
+def _bool(mapped: dict[str, str | list[str]], name: str) -> bool | None:
+    value = mapped.get(name)
+    if not isinstance(value, str):
+        return None
+    text = value.strip().lower()
+    if text in _TRUE:
+        return True
+    if text in _FALSE:
+        return False
+    return None
 
 
 def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> CollectionObject:
@@ -217,5 +253,18 @@ def _build_media(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> M
         checksum=_scalar(mapped, "checksum"),
         publication_status=_scalar(mapped, "publication_status"),
         rights_id=_scalar(mapped, "rights_id"),
+        source_ref=source_ref,
+    )
+
+
+def _build_rights(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> RightsRecord:
+    return RightsRecord(
+        rights_id=str(mapped["rights_id"]),
+        rights_status=_scalar(mapped, "rights_status"),
+        copyright_holder=_scalar(mapped, "copyright_holder"),
+        license_uri=_scalar(mapped, "license_uri"),
+        credit_line=_scalar(mapped, "credit_line"),
+        publication_allowed=_bool(mapped, "publication_allowed"),
+        review_required=_bool(mapped, "review_required"),
         source_ref=source_ref,
     )

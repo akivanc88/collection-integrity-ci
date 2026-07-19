@@ -445,3 +445,54 @@ Slice C validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 3 of
 
 **Next slice:** Slice D — `RightsRecord` entity + REF002 (orphan rights reference) + RIGHTS001
 (publication-rights policy conflict), with injectors and two validated iterations.
+
+---
+
+## 2026-07-18 — Loop 10: Slice D — RightsRecord + REF002 + RIGHTS001
+
+**Slice:** RightsRecord entity + REF002 (orphan rights reference from object or media) + RIGHTS001
+(publication-rights policy conflict), with injectors and two validated iterations.
+
+**Files created/changed:**
+
+- `canonical/models.py` — `RightsRecord`.
+- `ingestion/mapper.py` — `SCALAR_RIGHTS_FIELDS`, `load_rights`, `_build_rights`, `_bool` parser
+  (true/false/yes/no/1/0).
+- `rules/base.py` — `RuleContext.rights`.
+- `rules/reference_rules.py` — `REF002_ORPHAN_RIGHTS_REFERENCE` (checks object + media rights_id).
+- `rules/rights_rules.py` (new) — `RIGHTS001_PUBLICATION_CONFLICT` (critical). Policy: an entity
+  whose publication_status is "public" but whose linked rights record does not clearly permit
+  publication (publication_allowed must be True, review_required not True, rights_status not in
+  restricted/unknown/review_required). Deliberately skips entities whose rights reference is
+  missing — that's REF002's job — so no entity is double-reported. Documented as policy
+  consistency, not legal advice.
+- `rules/registry.py` — registered REF002 + RIGHTS001.
+- `cli.py` — `_load_entities` now returns objects + media + rights.
+- `benchmark/synthetic.py` — `generate_clean_rights`, `rights_permits_publication`,
+  `link_objects_to_rights` (clean invariant: public only when rights permit).
+- `benchmark/injectors.py` — `inject_orphan_rights` (REF002), `inject_publication_conflict`
+  (RIGHTS001, flips a non-public object linked to restricted rights to public); manifest
+  accessors; `benchmark/metrics.py` scores both.
+- Tests: `test_rights_rules.py`, `test_rights_accuracy.py`; fixtures `mapping_rights.csv/.yaml`,
+  `objects_with_rights.csv`; extended the VL-02 harness to carry rights.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 68 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (24 source files)
+```
+
+**Iteration 1 (accuracy on AI data):** clean rights-linked dataset yields no REF002/RIGHTS001;
+injecting 5 orphan rights references + 5 publication conflicts and scoring gives
+**precision = recall = 1.0** for both rules (TP 5 each). The RIGHTS001 policy is mirrored in the
+generator so clean data stays clean, and injection is disjoint (orphaned objects can't also be
+conflict targets).
+
+**Iteration 2 (VL-02):** the determinism harness now builds objects+media+rights seeded with all
+five error types; all 5 rules pass stable + shuffled (three entity lists shuffled independently),
+with guard tests asserting REF001/REF002/RIGHTS001 each produce their expected finding counts.
+
+**Next:** commit, then VL-06 mutation on REF002 + RIGHTS001 (recorded next loop). Phase 2 rule
+count after this slice: 5 of ~15.
