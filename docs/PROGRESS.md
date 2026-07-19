@@ -918,3 +918,37 @@ Slice L validation approved (VL-03 e2e + VL-06). VL-03 is now `active`.
 
 **Next slice:** Slice M — the `collection-ci benchmark` CLI command (inject errors, scan, score
 precision/recall/F1 per rule, write a report).
+
+---
+
+## 2026-07-19 — Loop 22: Slice M — `collection-ci benchmark` command
+
+**Slice:** A reproducible benchmark command that generates data, injects labeled errors, scans,
+and scores precision/recall/F1 per rule.
+
+**Files created/changed:** `benchmark/runner.py` (`run_benchmark` -> `BenchmarkResult` with
+per-rule precision/recall/F1/TP/FP/FN, runtime, `meets_target`; covers the 5 object-level rules —
+CORE001/002, DATE001, VOCAB001, SCHEMA001 — multi-entity coverage is backlog); `cli.py`
+`benchmark` command (writes `benchmark_report.json`, prints a rich table, exits 0 iff every rule
+meets P=R=1.0). Tests: `test_benchmark_runner.py` (perfect P/R, determinism by seed, CLI writes
+report + exits 0).
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 164 passed
+uv run ruff check .; uv run mypy src   # clean (39 source files)
+uv run collection-ci benchmark --output-dir <d>
+  # -> table: all 5 rules precision/recall/F1 = 1.00; 20 findings; runtime ~0.002s;
+  #    meets target: yes; exit 0
+```
+
+**Iteration 1 (accuracy + determinism):** the benchmark scores all five object-level rules at
+**precision = recall = F1 = 1.0** (20 findings = 5 rules x 4 injected errors), and `run_benchmark`
+is deterministic by seed (identical per-rule metrics and finding count across two runs). The CLI
+command writes `benchmark_report.json` and exits 0 only when the target is met (1 otherwise).
+
+**Iteration 2 (VL-06):** run after commit.
+
+**Next:** commit, VL-06 mutation on the benchmark runner. Then Slice N (full example datasets +
+e2e + demo workflow + Phase 3 CI steps).

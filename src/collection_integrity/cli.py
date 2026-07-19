@@ -258,6 +258,41 @@ def _write_baseline_summary(comparison: object, path: Path) -> None:
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+@app.command()
+def benchmark(
+    output_dir: Annotated[
+        Path, typer.Option(help="Directory to write benchmark_report.json into.")
+    ] = Path("benchmarks/reports/latest"),
+    seed: Annotated[int, typer.Option(help="Random seed (reproducible).")] = 42,
+    count: Annotated[int, typer.Option(help="Number of synthetic objects.")] = 60,
+) -> None:
+    """Run the deterministic benchmark and report precision/recall/F1 per rule."""
+    from collection_integrity.benchmark.runner import run_benchmark
+
+    result = run_benchmark(count=count, seed=seed)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = output_dir / "benchmark_report.json"
+    report_path.write_text(
+        json.dumps(result.to_dict(), indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+    table = Table(title=f"Benchmark (seed {seed}, {count} objects)")
+    table.add_column("Rule")
+    table.add_column("Precision", justify="right")
+    table.add_column("Recall", justify="right")
+    table.add_column("F1", justify="right")
+    for rule_id, m in result.per_rule.items():
+        table.add_row(rule_id, f"{m['precision']:.2f}", f"{m['recall']:.2f}", f"{m['f1']:.2f}")
+    console.print(table)
+    console.print(
+        f"Runtime {result.runtime_seconds:.4f}s | {result.total_findings} findings | "
+        f"meets target: {'yes' if result.meets_target else 'no'}"
+    )
+    console.print(f"Wrote [bold]{report_path}[/bold]")
+    raise typer.Exit(code=0 if result.meets_target else 1)
+
+
 def _load_entities(
     objects_csv: Path | None, mapping_path: Path | None
 ) -> tuple[
