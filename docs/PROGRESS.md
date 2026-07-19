@@ -874,6 +874,11 @@ run, a driver with declared rules, and every result carries a valid level, a mes
 partialFingerprint, and a ruleId/ruleIndex that resolves to a declared rule. Source locations map
 the evidence file + row.
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** mutation loop on the SARIF writer (6 mutations: wrong version,
+critical->note, medium->error, drop partial fingerprints, skip declaring finding rules, drop
+startLine). **6/6 killed on the first pass, zero survivors.**
 
-**Next:** commit, VL-06 mutation on the SARIF writer. Then Slice L (baselines + --only-new, VL-03).
+Slice K validation approved (structural validation + VL-06).
+
+**Next slice:** Slice L — baseline comparison (new/unchanged/resolved) + `--only-new`, implementing
+the VL-03 baseline round-trip loop.
