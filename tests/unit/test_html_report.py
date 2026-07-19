@@ -76,6 +76,29 @@ def test_report_empty_state() -> None:
     assert "No findings" in html
 
 
+def test_report_lists_enabled_rules_even_without_findings() -> None:
+    # A rule that is enabled but produced no findings still appears in the rules-evaluated table.
+    manifest = {
+        **MANIFEST,
+        "enabled_rules": [
+            {"id": "CORE001_DUPLICATE_ACCESSION_NUMBER", "version": "1.0.0"},
+            {"id": "MEDIA004_UNREADABLE_IMAGE", "version": "1.0.0"},
+        ],
+    }
+    html = render_html_report([_finding("A1", "critical")], manifest, {"objects": 5})
+
+    # MEDIA004 has no findings, so it can only appear via the rules-evaluated table.
+    assert "MEDIA004_UNREADABLE_IMAGE" in html
+
+
+def test_report_orders_findings_by_severity() -> None:
+    findings = [_finding("HIGH1", "high"), _finding("CRIT1", "critical")]
+    html = render_html_report(findings, MANIFEST, {"objects": 5})
+
+    # Critical must be rendered before high in the findings table.
+    assert html.index("CRIT1") < html.index("HIGH1")
+
+
 def test_report_shows_disclaimer_and_provenance() -> None:
     html = render_html_report([_finding("A1", "critical")], MANIFEST, {"objects": 5})
 

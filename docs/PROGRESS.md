@@ -834,6 +834,13 @@ report for the synthetic dataset; the report contains no externally hosted asset
 finding summary is escaped to `&lt;script&gt;` rather than rendered live (threat-model
 sanitization). Severity is conveyed as text, not color alone (accessibility).
 
-**Iteration 2 (VL-06):** run after commit.
+**Iteration 2 (VL-06):** mutation loop on the HTML report (4 mutations): disable autoescape,
+drop findings, blank enabled rules, reverse severity order. First pass **2 survivors** (the
+rules-evaluated table and severity ordering were unasserted). Added a test that an enabled rule
+with zero findings still appears (rules-evaluated table) and a test that critical renders before
+high. Re-ran: **4/4 killed.** The disable-autoescape mutant being caught confirms the XSS-escaping
+test genuinely guards the sanitization.
 
-**Next:** commit, VL-06 mutation on the HTML report. Then Slice K (SARIF 2.1.0).
+Slice J validation approved (fidelity + safety + VL-06).
+
+**Next slice:** Slice K — SARIF 2.1.0 output with a structural validation test.
