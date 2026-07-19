@@ -75,6 +75,9 @@ RIGHTS_COLUMNS = ("rights_id", "rights_status", "publication_allowed", "review_r
 # Object columns including the rights link + publication status (used by the rights benchmark).
 OBJECT_WITH_RIGHTS_COLUMNS = OBJECT_COLUMNS + ("rights_id", "publication_status")
 
+# Location table columns (a union of hierarchy-node and object-assignment fields).
+LOCATION_COLUMNS = ("location_id", "name", "parent_location_id", "object_id", "is_current")
+
 
 def generate_clean_objects(count: int, seed: int) -> list[dict[str, str]]:
     """Generate `count` internally consistent object rows, deterministically from `seed`."""
@@ -165,6 +168,45 @@ def link_objects_to_rights(
             status = rng.choice(["internal", "private"])
         linked.append({**obj, "rights_id": rid, "publication_status": status})
     return linked
+
+
+def generate_clean_locations(
+    objects: list[dict[str, str]], num_nodes: int, seed: int
+) -> list[dict[str, str]]:
+    """Generate a valid location hierarchy plus one current assignment per object.
+
+    Clean invariant: the hierarchy is a tree (every parent exists, no cycles) and each object has
+    exactly one current location assignment — so a correct LOC001/LOC002 finds nothing.
+    """
+    rng = random.Random(seed)
+    rows: list[dict[str, str]] = []
+
+    # A tree: node i's parent is some earlier node, so no cycles and every parent exists.
+    node_ids = [f"LOC-{i:03d}" for i in range(1, num_nodes + 1)]
+    for i, loc_id in enumerate(node_ids):
+        parent = "" if i == 0 else rng.choice(node_ids[:i])
+        rows.append(
+            {
+                "location_id": loc_id,
+                "name": f"Location {i + 1}",
+                "parent_location_id": parent,
+                "object_id": "",
+                "is_current": "",
+            }
+        )
+
+    # One current assignment per object, each at a leaf-ish node.
+    for n, obj in enumerate(objects, start=1):
+        rows.append(
+            {
+                "location_id": f"ASG-{n:04d}",
+                "name": "",
+                "parent_location_id": "",
+                "object_id": obj["object_id"],
+                "is_current": "true",
+            }
+        )
+    return rows
 
 
 def generate_clean_media(objects: list[dict[str, str]], seed: int) -> list[dict[str, str]]:

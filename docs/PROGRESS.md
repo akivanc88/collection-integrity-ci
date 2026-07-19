@@ -520,3 +520,42 @@ Slice D validation approved (accuracy + VL-02 + VL-06). Phase 2 rule count: 5 of
 
 **Next slice:** Slice E — `LocationRecord` entity + LOC001 (multiple current locations) + LOC002
 (missing parents / cycles in the location hierarchy), with injectors and two validated iterations.
+
+---
+
+## 2026-07-18 — Loop 12: Slice E — LocationRecord + LOC001 + LOC002 (iteration 1 + VL-02)
+
+**Slice:** LocationRecord entity + LOC001 (object with >1 current location) + LOC002 (missing
+parent / cycle in the hierarchy). LocationRecord rows are dual-purpose: an assignment
+(object_id + is_current) feeds LOC001, a hierarchy node (location_id + parent_location_id) feeds
+LOC002; a row may be both (documented in the model + rule docstrings).
+
+**Files created/changed:** `canonical/models.py` (`LocationRecord`); `ingestion/mapper.py`
+(`load_locations`, `_build_location`, `SCALAR_LOCATION_FIELDS`); `rules/base.py`
+(`RuleContext.locations`); `rules/location_rules.py` (new — LOC001 high, LOC002 medium with
+missing-parent + cycle detection via a parent-chain walk that flags only nodes actually on the
+cycle); `rules/registry.py`; `cli.py` (`_load_entities` now 4-tuple); `benchmark/synthetic.py`
+(`generate_clean_locations` — valid tree + one current assignment/object);
+`benchmark/injectors.py` (`inject_extra_current_location`, `inject_location_hierarchy_errors`);
+`benchmark/metrics.py` (LOC001/LOC002 scoring). Tests: `test_location_rules.py`,
+`test_location_accuracy.py`; fixtures `locations.csv`, `mapping_locations.yaml`; VL-02 harness
+extended to carry locations.
+
+**Commands run and results:**
+
+```bash
+uv run pytest -q     # 84 passed
+uv run ruff check .  # clean
+uv run mypy src      # clean (25 source files)
+```
+
+**Iteration 1 (accuracy on AI data):** clean hierarchy + assignments yield no LOC001/LOC002;
+injecting 4 extra current assignments + (2 missing parents + 2 cycles) and scoring gives
+**precision = recall = 1.0** — LOC001 TP 4, LOC002 TP 6 (2 missing-parent nodes + 2 cycles × 2
+nodes). Cycle detection verified to flag only the two nodes on each 2-cycle, not their descendants.
+
+**Iteration 2 (VL-02):** determinism harness now builds all four entity types seeded with every
+error class; all 7 rules pass stable + shuffled (four lists shuffled independently); guard tests
+assert the expected finding counts for REF001/REF002/RIGHTS001/LOC001/LOC002.
+
+**Next:** commit, then VL-06 mutation on LOC001/LOC002 (next loop). Phase 2 rule count: 7 of ~15.

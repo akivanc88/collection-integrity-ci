@@ -71,6 +71,16 @@ class InjectionManifest:
         rid = "RIGHTS001_PUBLICATION_CONFLICT"
         return {e.entity_id for e in self.errors if e.expected_rule_id == rid}
 
+    def expected_loc001_ids(self) -> set[str]:
+        """object ids a correct LOC001 run must flag as having multiple current locations."""
+        rid = "LOC001_MULTIPLE_CURRENT_LOCATIONS"
+        return {e.entity_id for e in self.errors if e.expected_rule_id == rid}
+
+    def expected_loc002_ids(self) -> set[str]:
+        """location ids a correct LOC002 run must flag (missing parent or cycle)."""
+        rid = "LOC002_INVALID_LOCATION_HIERARCHY"
+        return {e.entity_id for e in self.errors if e.expected_rule_id == rid}
+
 
 def inject_errors(
     clean_rows: list[dict[str, str]],
@@ -260,4 +270,106 @@ def inject_publication_conflict(
                 after_value="public",
             )
         )
+    return rows, errors
+
+
+def inject_extra_current_location(
+    location_rows: list[dict[str, str]],
+    seed: int,
+    num_extra: int = 3,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Add a second current assignment for some objects (LOC001). Non-mutating (appends rows)."""
+    rows = copy.deepcopy(location_rows)
+    rng = random.Random(seed)
+
+    assigned_objects = sorted(
+        {r["object_id"] for r in rows if r.get("object_id") and r.get("is_current") == "true"}
+    )
+    if num_extra > len(assigned_objects):
+        raise ValueError(f"need at least {num_extra} assigned objects, got {len(assigned_objects)}")
+    rng.shuffle(assigned_objects)
+
+    errors: list[InjectedError] = []
+    for n in range(num_extra):
+        object_id = assigned_objects[n]
+        rows.append(
+            {
+                "location_id": f"EXTRA-ASG-{n + 1}",
+                "name": "",
+                "parent_location_id": "",
+                "object_id": object_id,
+                "is_current": "true",
+            }
+        )
+        errors.append(
+            InjectedError(
+                error_id=f"MULTI-CURRENT-{n + 1}",
+                expected_rule_id="LOC001_MULTIPLE_CURRENT_LOCATIONS",
+                entity_type="object",
+                entity_id=object_id,
+                field="is_current",
+                before_value="1 current",
+                after_value="2 current",
+            )
+        )
+    return rows, errors
+
+
+def inject_location_hierarchy_errors(
+    location_rows: list[dict[str, str]],
+    seed: int,
+    num_missing_parent: int = 2,
+    num_cycle: int = 1,
+) -> tuple[list[dict[str, str]], list[InjectedError]]:
+    """Introduce missing-parent and cycle errors into the hierarchy (LOC002). Non-mutating.
+
+    Missing-parent: repoint a node's parent at a synthesised non-existent id.
+    Cycle: pick two distinct nodes and point them at each other (a 2-cycle), flagging both.
+    """
+    rows = copy.deepcopy(location_rows)
+    rng = random.Random(seed)
+
+    node_idx = [i for i, r in enumerate(rows) if not r.get("object_id")]
+    if num_missing_parent + num_cycle * 2 > len(node_idx):
+        raise ValueError("not enough hierarchy nodes to inject the requested errors")
+    rng.shuffle(node_idx)
+    pool = iter(node_idx)
+
+    errors: list[InjectedError] = []
+
+    for n in range(num_missing_parent):
+        idx = next(pool)
+        bogus = f"MISSING-LOC-{n + 1}"
+        rows[idx]["parent_location_id"] = bogus
+        errors.append(
+            InjectedError(
+                error_id=f"MISSING-PARENT-{n + 1}",
+                expected_rule_id="LOC002_INVALID_LOCATION_HIERARCHY",
+                entity_type="location",
+                entity_id=rows[idx]["location_id"],
+                field="parent_location_id",
+                before_value="",
+                after_value=bogus,
+            )
+        )
+
+    for n in range(num_cycle):
+        a_idx = next(pool)
+        b_idx = next(pool)
+        a_id = rows[a_idx]["location_id"]
+        b_id = rows[b_idx]["location_id"]
+        rows[a_idx]["parent_location_id"] = b_id
+        rows[b_idx]["parent_location_id"] = a_id
+        for loc_id in (a_id, b_id):
+            errors.append(
+                InjectedError(
+                    error_id=f"CYCLE-{n + 1}-{loc_id}",
+                    expected_rule_id="LOC002_INVALID_LOCATION_HIERARCHY",
+                    entity_type="location",
+                    entity_id=loc_id,
+                    field="parent_location_id",
+                    before_value="",
+                    after_value="cycle",
+                )
+            )
     return rows, errors

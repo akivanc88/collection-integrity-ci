@@ -1,0 +1,25 @@
+version: 1
+dataset:
+  name: locations-test
+  format: csv
+  base_path: .
+
+entities:
+  objects:
+    file: mapping_objects.csv
+    primary_key: object_id
+    fields:
+      object_id: id
+      accession_number: accession
+      object_name: name
+      title: name
+
+  locations:
+    file: locations.csv
+    primary_key: location_id
+    fields:
+      location_id: loc_id
+      name: pname
+      parent_location_id: parent
+      object_id: obj
+      is_current: current

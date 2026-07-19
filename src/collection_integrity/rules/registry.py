@@ -15,6 +15,10 @@ from collection_integrity.rules.core_rules import (
     DuplicateAccessionNumberRule,
     RequiredFieldMissingRule,
 )
+from collection_integrity.rules.location_rules import (
+    InvalidLocationHierarchyRule,
+    MultipleCurrentLocationsRule,
+)
 from collection_integrity.rules.reference_rules import (
     OrphanMediaObjectRule,
     OrphanRightsReferenceRule,
@@ -28,6 +32,8 @@ ALL_RULE_CLASSES: tuple[type[Rule], ...] = (
     OrphanMediaObjectRule,
     OrphanRightsReferenceRule,
     PublicationRightsConflictRule,
+    MultipleCurrentLocationsRule,
+    InvalidLocationHierarchyRule,
 )
 
 

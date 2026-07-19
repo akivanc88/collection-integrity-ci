@@ -18,11 +18,14 @@ import pytest
 
 from collection_integrity.benchmark.injectors import (
     inject_errors,
+    inject_extra_current_location,
+    inject_location_hierarchy_errors,
     inject_orphan_media,
     inject_orphan_rights,
     inject_publication_conflict,
 )
 from collection_integrity.benchmark.synthetic import (
+    generate_clean_locations,
     generate_clean_media,
     generate_clean_objects,
     generate_clean_rights,
@@ -31,6 +34,7 @@ from collection_integrity.benchmark.synthetic import (
 )
 from collection_integrity.canonical.models import (
     CollectionObject,
+    LocationRecord,
     MediaAsset,
     RightsRecord,
     SourceRef,
@@ -90,7 +94,23 @@ def _rows_to_rights(rows: list[dict[str, str]]) -> list[RightsRecord]:
     ]
 
 
-def _dirty_context() -> tuple[list[CollectionObject], list[MediaAsset], list[RightsRecord]]:
+def _rows_to_locations(rows: list[dict[str, str]]) -> list[LocationRecord]:
+    return [
+        LocationRecord(
+            location_id=row["location_id"],
+            name=(row.get("name") or "").strip() or None,
+            parent_location_id=(row.get("parent_location_id") or "").strip() or None,
+            object_id=(row.get("object_id") or "").strip() or None,
+            is_current=row.get("is_current", "").strip().lower() == "true",
+            source_ref=_ref(row["location_id"]),
+        )
+        for row in rows
+    ]
+
+
+def _dirty_context() -> tuple[
+    list[CollectionObject], list[MediaAsset], list[RightsRecord], list[LocationRecord]
+]:
     clean = generate_clean_objects(count=40, seed=7)
     dirty_objs, _ = inject_errors(clean, seed=11, num_duplicate_accession=3, num_missing_field=3)
 
@@ -106,7 +126,19 @@ def _dirty_context() -> tuple[list[CollectionObject], list[MediaAsset], list[Rig
     dirty_media, _ = inject_orphan_media(
         media, {o["object_id"] for o in clean}, seed=21, num_orphan=4
     )
-    return _rows_to_objects(linked), _rows_to_media(dirty_media), _rows_to_rights(rights)
+
+    locations = generate_clean_locations(clean, num_nodes=15, seed=17)
+    locations, _ = inject_extra_current_location(locations, seed=23, num_extra=3)
+    locations, _ = inject_location_hierarchy_errors(
+        locations, seed=29, num_missing_parent=2, num_cycle=1
+    )
+
+    return (
+        _rows_to_objects(linked),
+        _rows_to_media(dirty_media),
+        _rows_to_rights(rights),
+        _rows_to_locations(locations),
+    )
 
 
 def _fingerprints(
@@ -114,32 +146,40 @@ def _fingerprints(
     objects: list[CollectionObject],
     media: list[MediaAsset],
     rights: list[RightsRecord],
+    locations: list[LocationRecord],
 ) -> set[str]:
-    ctx = RuleContext(objects=objects, media=media, rights=rights, required_fields=REQUIRED_FIELDS)
+    ctx = RuleContext(
+        objects=objects,
+        media=media,
+        rights=rights,
+        locations=locations,
+        required_fields=REQUIRED_FIELDS,
+    )
     return {f.fingerprint for f in rule.evaluate(ctx, rule.default_severity)}
 
 
 @pytest.mark.parametrize("rule_cls", ALL_RULE_CLASSES, ids=lambda c: c().rule.id)
 def test_fingerprints_stable_across_identical_runs(rule_cls: type[Rule]) -> None:
-    objects, media, rights = _dirty_context()
+    objects, media, rights, locations = _dirty_context()
     rule = rule_cls()
 
-    assert _fingerprints(rule, objects, media, rights) == _fingerprints(
-        rule, objects, media, rights
+    assert _fingerprints(rule, objects, media, rights, locations) == _fingerprints(
+        rule, objects, media, rights, locations
     )
 
 
 @pytest.mark.parametrize("rule_cls", ALL_RULE_CLASSES, ids=lambda c: c().rule.id)
 def test_fingerprints_invariant_to_input_order(rule_cls: type[Rule]) -> None:
-    objects, media, rights = _dirty_context()
-    s_objs, s_media, s_rights = objects[:], media[:], rights[:]
+    objects, media, rights, locations = _dirty_context()
+    s_objs, s_media, s_rights, s_locs = objects[:], media[:], rights[:], locations[:]
     random.Random(123).shuffle(s_objs)
     random.Random(456).shuffle(s_media)
     random.Random(789).shuffle(s_rights)
+    random.Random(101).shuffle(s_locs)
     rule = rule_cls()
 
-    assert _fingerprints(rule, objects, media, rights) == _fingerprints(
-        rule, s_objs, s_media, s_rights
+    assert _fingerprints(rule, objects, media, rights, locations) == _fingerprints(
+        rule, s_objs, s_media, s_rights, s_locs
     )
 
 
@@ -149,11 +189,13 @@ def test_fingerprints_invariant_to_input_order(rule_cls: type[Rule]) -> None:
         ("REF001_ORPHAN_MEDIA_OBJECT", 4),
         ("REF002_ORPHAN_RIGHTS_REFERENCE", 3),
         ("RIGHTS001_PUBLICATION_CONFLICT", 3),
+        ("LOC001_MULTIPLE_CURRENT_LOCATIONS", 3),
+        ("LOC002_INVALID_LOCATION_HIERARCHY", 4),
     ],
 )
 def test_harness_actually_exercises_each_rule(rule_id: str, expected_count: int) -> None:
     # Guard: if the harness ever stops producing findings for these rules, their determinism cases
     # above would pass trivially. This asserts the harness genuinely exercises them.
-    objects, media, rights = _dirty_context()
+    objects, media, rights, locations = _dirty_context()
     rule = next(c() for c in ALL_RULE_CLASSES if c().rule.id == rule_id)
-    assert len(_fingerprints(rule, objects, media, rights)) == expected_count
+    assert len(_fingerprints(rule, objects, media, rights, locations)) == expected_count

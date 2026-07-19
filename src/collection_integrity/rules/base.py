@@ -13,7 +13,12 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
-from collection_integrity.canonical.models import CollectionObject, MediaAsset, RightsRecord
+from collection_integrity.canonical.models import (
+    CollectionObject,
+    LocationRecord,
+    MediaAsset,
+    RightsRecord,
+)
 from collection_integrity.engine.findings import (
     EntityRef,
     EvidenceItem,
@@ -28,13 +33,14 @@ from collection_integrity.engine.findings import (
 class RuleContext:
     """Everything a rule needs to evaluate a scan.
 
-    Location/agent collections will be added here as the entities and the rules that consume them
+    An agent/maker collection will be added here as the entities and the rules that consume them
     land (Phase 2).
     """
 
     objects: list[CollectionObject]
     media: list[MediaAsset] = field(default_factory=list)
     rights: list[RightsRecord] = field(default_factory=list)
+    locations: list[LocationRecord] = field(default_factory=list)
     required_fields: list[str] = field(default_factory=list)
 
 

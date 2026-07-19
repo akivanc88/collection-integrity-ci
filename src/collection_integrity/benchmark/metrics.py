@@ -57,6 +57,12 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
     rights001_found = {
         f.entity.id for f in findings if f.rule.id == "RIGHTS001_PUBLICATION_CONFLICT"
     }
+    loc001_found = {
+        f.entity.id for f in findings if f.rule.id == "LOC001_MULTIPLE_CURRENT_LOCATIONS"
+    }
+    loc002_found = {
+        f.entity.id for f in findings if f.rule.id == "LOC002_INVALID_LOCATION_HIERARCHY"
+    }
 
     return {
         "CORE001_DUPLICATE_ACCESSION_NUMBER": _metrics(
@@ -75,6 +81,12 @@ def score(findings: list[Finding], manifest: InjectionManifest) -> dict[str, Rul
         ),
         "RIGHTS001_PUBLICATION_CONFLICT": _metrics(
             "RIGHTS001_PUBLICATION_CONFLICT", rights001_found, manifest.expected_rights001_ids()
+        ),
+        "LOC001_MULTIPLE_CURRENT_LOCATIONS": _metrics(
+            "LOC001_MULTIPLE_CURRENT_LOCATIONS", loc001_found, manifest.expected_loc001_ids()
+        ),
+        "LOC002_INVALID_LOCATION_HIERARCHY": _metrics(
+            "LOC002_INVALID_LOCATION_HIERARCHY", loc002_found, manifest.expected_loc002_ids()
         ),
     }
 

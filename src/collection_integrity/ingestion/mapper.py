@@ -20,6 +20,7 @@ from collection_integrity.canonical.mappings import (
 )
 from collection_integrity.canonical.models import (
     CollectionObject,
+    LocationRecord,
     MediaAsset,
     RightsRecord,
     SourceRef,
@@ -66,6 +67,14 @@ SCALAR_RIGHTS_FIELDS = {
     "credit_line",
     "publication_allowed",
     "review_required",
+}
+
+SCALAR_LOCATION_FIELDS = {
+    "location_id",
+    "name",
+    "parent_location_id",
+    "object_id",
+    "is_current",
 }
 
 _TRUE = {"true", "1", "yes", "y", "t"}
@@ -183,6 +192,12 @@ def load_rights(mapping: DatasetMapping, base_dir: Path) -> list[RightsRecord]:
     return [_build_rights(mapped, ref) for mapped, ref in records]
 
 
+def load_locations(mapping: DatasetMapping, base_dir: Path) -> list[LocationRecord]:
+    """Load the `locations` entity described by `mapping` into canonical records."""
+    records = _load_entity_records(mapping, "locations", base_dir, SCALAR_LOCATION_FIELDS, set())
+    return [_build_location(mapped, ref) for mapped, ref in records]
+
+
 def has_entity(mapping: DatasetMapping, entity_name: str) -> bool:
     return entity_name in mapping.entities
 
@@ -266,5 +281,16 @@ def _build_rights(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> 
         credit_line=_scalar(mapped, "credit_line"),
         publication_allowed=_bool(mapped, "publication_allowed"),
         review_required=_bool(mapped, "review_required"),
+        source_ref=source_ref,
+    )
+
+
+def _build_location(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> LocationRecord:
+    return LocationRecord(
+        location_id=str(mapped["location_id"]),
+        name=_scalar(mapped, "name"),
+        parent_location_id=_scalar(mapped, "parent_location_id"),
+        object_id=_scalar(mapped, "object_id"),
+        is_current=_bool(mapped, "is_current"),
         source_ref=source_ref,
     )

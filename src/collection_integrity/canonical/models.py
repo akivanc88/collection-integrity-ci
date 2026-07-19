@@ -85,3 +85,22 @@ class RightsRecord(BaseModel):
     review_required: bool | None = None
     expiry_date: date | None = None
     source_ref: SourceRef
+
+
+class LocationRecord(BaseModel):
+    """A canonical location record.
+
+    A row may act as a hierarchy node (``location_id`` + ``parent_location_id``), an object
+    location assignment (``object_id`` + ``is_current``), or both — see docs/DOMAIN_MODEL.md.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    location_id: str
+    name: str | None = None
+    parent_location_id: str | None = None
+    object_id: str | None = None
+    is_current: bool | None = None
+    effective_start: date | None = None
+    effective_end: date | None = None
+    source_ref: SourceRef

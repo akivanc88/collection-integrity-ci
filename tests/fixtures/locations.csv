@@ -1,0 +1,10 @@
+loc_id,pname,parent,obj,current
+LOC-BUILDING,Main Building,,,
+LOC-GALLERY-1,Gallery 1,LOC-BUILDING,,
+LOC-GALLERY-2,Gallery 2,LOC-BUILDING,,
+LOC-ORPHAN,Storage Annex,LOC-MISSING,,
+LOC-CYCLE-A,Cycle A,LOC-CYCLE-B,,
+LOC-CYCLE-B,Cycle B,LOC-CYCLE-A,,
+ASG-1,,,OBJ-1,true
+ASG-2,,,OBJ-1,true
+ASG-3,,,OBJ-2,true
