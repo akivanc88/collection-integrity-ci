@@ -19,7 +19,7 @@ on a later phase's features).
 
 | ID | Loop | Validates | Status |
 | --- | --- | --- | --- |
-| VL-01 | Benchmark closure | Rule-engine correctness | partial (14 rules at P=R=1.0; DATE002 unit-tested) |
+| VL-01 | Benchmark closure | Rule-engine correctness | partial (14 rules P=R=1.0; `benchmark` command scores 5) |
 | VL-02 | Fingerprint determinism | Finding identity/baselines | active (all rules, incl. shuffled input) |
 | VL-03 | Baseline round-trip | Regression behavior | active (e2e: zero-new / one-new / one-resolved) |
 | VL-04 | Threat-model adversarial | Robustness to hostile input | partial (media path-traversal refusal tested) |

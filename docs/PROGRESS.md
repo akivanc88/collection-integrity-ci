@@ -990,6 +990,40 @@ example scans to exactly the findings recorded in `dirty_expected.json` — 5 ea
 CORE002, DATE001, SCHEMA001 over 250 objects — and exits 1. The e2e test asserts the dirty summary
 equals the expected manifest, so drift in either the data or the engine breaks CI.
 
-**Iteration 2 (determinism):** verify the examples regenerate byte-identically (next command).
+**Iteration 2 (determinism):** re-ran `examples/generate.py` and confirmed the committed clean +
+dirty CSVs, mappings, and expected manifest are reproduced **byte-identically** (empty `git diff`).
 
-**Next:** confirm regeneration determinism, commit, then Phase 3 wrap-up.
+Slice N validation approved (e2e behavior + determinism).
+
+---
+
+## 2026-07-19 — Phase 3 complete
+
+All Phase 3 slices done, each with two validated iterations:
+
+- Slice I: CSV + summary + run-manifest outputs
+- Slice J: standalone HTML report (self-contained, accessible, XSS-safe)
+- Slice K: SARIF 2.1.0
+- Slice L: baselines + `--only-new` (VL-03 now active)
+- Slice M: `collection-ci benchmark` command
+- Slice N: full example datasets + e2e + demo + Phase 3 CI
+
+**Phase 3 checklist (BUILD_BRIEF.md Section 24) status:** CSV/HTML/SARIF/manifest outputs (done),
+baseline comparison (done), full clean/dirty examples (done — 250 objects), deterministic error
+injection (done, Phase 2), benchmark metrics + report + command (done), e2e tests (done, `tests/e2e/`),
+demo workflow (done, `docs/DEMO.md` + `collection-integrity-demo.yml`).
+
+**Validation loop status:** VL-01 partial (14 rules P=R=1.0; benchmark command scores 5 at 1.0),
+VL-02 active, VL-03 active (e2e round-trip), VL-06 active (found+closed 15 real gaps across Phases
+2-3). VL-04 partial (path traversal + XSS escaping tested), VL-05 (fuzz) still pending.
+
+**Aggregate:** 167 tests passing, ruff + mypy clean, package builds. A scan now emits findings.json,
+findings.csv, summary.json, run_manifest.json, report.html, and results.sarif; baselines + benchmark
++ run store are wired; CI runs lint/format/types/tests/build/benchmark/sample-scan and a separate
+demo workflow. Commits af6034f..(this loop), none pushed (no git remote).
+
+**Next (Phase 4+):** museum-data source adapters (Met/Cleveland/NGA), the local web viewer (Phase 5),
+optional ArtiFact/probabilistic experiment (Phase 6), and the GitHub Pages showcase (Phase 7).
+Remaining validation loops: VL-04 (broaden the adversarial fixture set), VL-05 (Hypothesis fuzz),
+VL-07 (coverage ratchet in CI), VL-08 (execute the README quick start verbatim), VL-10 (final
+Definition-of-Done pass).
