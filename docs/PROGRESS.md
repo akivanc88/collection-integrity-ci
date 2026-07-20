@@ -1226,3 +1226,76 @@ Slice Q validation approved (accuracy P=R=1.0 incl. DATE002 + VL-06). The Met/Cl
 
 **Next slice:** Slice R — bounded sample-download scripts (`--limit`, explicit local paths, never a
 full auto-download) and `docs/DATA_SOURCES.md` provenance/attribution, completing Phase 4.
+
+---
+
+## 2026-07-19 — Loop 28: Phase 4 Slice R — bounded sample-download scripts + attribution docs
+
+**Slice:** The last Phase 4 item — bounded sampling tooling and provenance/attribution
+documentation. The Section 20 safety rule ("never download an entire large dataset automatically;
+provide --limit and explicit paths") is enforced structurally, not by convention.
+
+**Files created/changed:** `ingestion/sampling.py` (new — `take_bounded_lines`, the single safety
+boundary that stops after `limit` records even on an unbounded stream; `bound_csv_text`;
+`bound_nga_directory`, a referentially-consistent relational sample: N objects + only the links and
+constituents they reference); `scripts/fetch_sample.py` (new — argparse CLI; requires an explicit
+`--from` local path or `--url`, no default remote; a `MAX_LIMIT` ceiling; NGA relational mode; the
+network path streams through the same tested bound); `docs/DATA_SOURCES.md` (new — provenance, CC0
+licenses, per-adapter field maps, safety/no-images notes, honest limitations, validation pointer);
+`CLAUDE.md` (refreshed the stale "Current phase" note to Phases 0–4 complete). Tests:
+`tests/unit/test_sampling.py`, `tests/integration/test_fetch_sample_script.py`.
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (46 source files)
+uv run pytest -q                                                       # 196 passed
+python scripts/fetch_sample.py --source nga --from <dir> --limit 5 --output <out>
+  # -> writes objects(5) + only referenced links/constituents; re-ingests cleanly via the adapter
+```
+
+**Iteration 1 (behavior on AI-generated data):** `take_bounded_lines` returns exactly header +
+`limit` rows and — the key safety property — **returns rather than hanging when fed an infinite line
+generator**, proving the bound holds regardless of input size. `bound_nga_directory` produces a
+subset with no dangling references (every link points at a kept object and a kept constituent; no
+orphan constituents), and the bounded NGA sample **re-ingests through the `nga` adapter** with the
+object count equal to the limit and every maker link resolving to a kept agent. The script's
+subprocess tests cover local Met bounding, relational NGA bounding, and the guards
+(exactly-one-of `--from`/`--url`, the limit ceiling).
+
+**Iteration 2 (VL-06 mutation):** mutation loop on `sampling.py` (6 mutations: off-by-one row bound,
+dropped negative-limit guard, header omitted, objects not bounded by limit, links not filtered,
+constituents not filtered). **6/6 killed on the first pass, zero survivors.**
+
+Slice R validation approved (bounded-safety + referential-consistency + round-trip + VL-06).
+
+---
+
+## 2026-07-19 — Phase 4 complete
+
+All Phase 4 slices done, each with two validated iterations (accuracy on AI-generated real-schema
+data + VL-06 mutation):
+
+- Slice O: source-adapter framework + Met adapter
+- Slice P: Cleveland adapter (CSV + JSON, equivalence-checked)
+- Slice Q: NGA relational adapter (link-table join → maker_ids/agents, DATE002)
+- Slice R: bounded sample-download scripts + `docs/DATA_SOURCES.md`
+
+**Phase 4 checklist (BUILD_BRIEF.md Section 24):** Met adapter (done), Cleveland adapter (done),
+NGA adapter (done), bounded sample scripts with `--limit`/explicit paths (done), provenance +
+attribution documentation (done, `docs/DATA_SOURCES.md`).
+
+**Design through-line:** an adapter is a built-in, versioned mapping profile (`SourceLoad` +
+`load_from_mapping`) that reuses the whole existing ingestion/provenance/rule pipeline; only the NGA
+many-to-many join needed bespoke code. Every adapter was validated on synthetic data built in the
+institution's real published schema, scored at precision = recall = 1.0, and hardened with a VL-06
+mutation pass (found and closed 2 real test gaps in Slice O).
+
+**Aggregate:** 196 tests passing, ruff + mypy clean. Three museum source adapters plus bounded,
+safety-capped sampling; the offline core still makes no network calls. Commits bf9454c..(this loop),
+none pushed (no git remote).
+
+**Next (Phase 5):** the local web viewer (FastAPI), now unblocked — but per the brief, build it only
+after confirming the engine/reports/benchmark/tests are stable (they are). Remaining validation
+loops: VL-04 (broaden adversarial fixtures), VL-05 (Hypothesis fuzz), VL-07 (coverage ratchet),
+VL-08 (README quick start executes), VL-10 (final Definition-of-Done pass).

@@ -14,10 +14,11 @@ It is *not* a CMS, not a rights/legal authority, and does not edit source record
 
 ## Current phase
 
-Phase 1: Foundation (see `BUILD_BRIEF.md` Section 24). Package scaffold, canonical models,
-provenance, and the first vertical slice (CSV ingestion -> duplicate accession detection ->
-console/JSON findings) are in progress. Web UI (Phase 5) and GitHub Pages showcase (Phase 7) have
-not started and must not start early.
+Phases 0–4 are complete (see `BUILD_BRIEF.md` Section 24 and `docs/PROGRESS.md`): foundation, the
+deterministic engine with all 15 rules, reports/baselines/benchmark, and the Met/Cleveland/NGA
+source adapters with bounded sampling. Phase 5 (local web viewer) is next and is gated on Phases
+1–3 passing (they do). The GitHub Pages showcase (Phase 7) has not started and must not start early;
+publishing remains approval-gated.
 
 Track detailed status in `docs/PROGRESS.md` (source of truth for what actually works).
 
