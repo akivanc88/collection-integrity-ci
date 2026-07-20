@@ -1027,3 +1027,42 @@ optional ArtiFact/probabilistic experiment (Phase 6), and the GitHub Pages showc
 Remaining validation loops: VL-04 (broaden the adversarial fixture set), VL-05 (Hypothesis fuzz),
 VL-07 (coverage ratchet in CI), VL-08 (execute the README quick start verbatim), VL-10 (final
 Definition-of-Done pass).
+
+---
+
+## 2026-07-19 — Loop 24: Normalize entity file paths in provenance
+
+**Slice:** Fix a provenance-quality issue surfaced while tracing a finding's evidence chain
+end-to-end: when a mapping's `base_path` uses a relative `..` segment (e.g. the example datasets'
+`base_path: ../dirty` resolved from `examples/mappings/`), the `source_file` recorded in every
+`SourceRef` — and shown in findings, reports, and the run manifest — carried the uncollapsed
+`examples/mappings/../dirty/objects.csv` instead of the clean `examples/dirty/objects.csv`. Correct
+and resolvable, but ugly in a report a registrar reads.
+
+**Files changed:** `ingestion/mapper.py` — added `_entity_file_path()` helper that builds the
+entity data-file path and lexically normalizes it with `os.path.normpath` (collapses `..` without
+resolving to an absolute path, so reports stay machine-independent and byte-reproducible). Routed
+both path-construction sites through it: `_load_entity_records` (the provenance `SourceRef`) and
+`resolve_entity_files` (manifest hashing), so the two can't drift.
+
+**Design note:** deliberately `normpath`, not `Path.resolve()` — `resolve()` would emit an absolute,
+machine-specific path and break the reproducibility guarantee. The finding fingerprint does not
+include `source_file`, so this is a display-only change: existing baselines still match (verified).
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (39 source files)
+uv run pytest -q                                                       # 167 passed
+uv run collection-ci scan --mapping examples/mappings/dirty.yaml --output-dir <d>
+  # -> evidence source_file now 'examples/dirty/objects.csv' (was 'examples/mappings/../dirty/...')
+  #    same CORE001 finding fingerprint 0da315c3... UNCHANGED (source_file not in fingerprint)
+```
+
+**Validation:** full suite green with no test changes needed (no test had hard-coded the old `..`
+form, and no committed golden/expected artifact contained it — grep-verified). Fingerprint stability
+confirmed by hand: the traced CORE001 duplicate keeps fingerprint `0da315c3…` before and after, so
+`--baseline`/`--only-new` will not flag spurious new findings from the path cleanup.
+
+**Next slice:** unchanged — Phase 4 (Met CSV source adapter), or one of the pending validation loops
+(VL-05 fuzz / VL-08 README-executes).

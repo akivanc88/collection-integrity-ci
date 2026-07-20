@@ -7,6 +7,7 @@ remains for the simple, mapping-free case.
 
 from __future__ import annotations
 
+import os
 from datetime import UTC, date, datetime
 from pathlib import Path
 
@@ -152,10 +153,7 @@ def _load_entity_records(
         raise IngestionError(f"mapping has no {entity_name!r} entity")
     entity = mapping.entities[entity_name]
 
-    base_path = Path(mapping.dataset.base_path)
-    if not base_path.is_absolute():
-        base_path = base_dir / base_path
-    file_path = base_path / entity.file
+    file_path = _entity_file_path(mapping, entity, base_dir)
 
     records = read_rows(file_path, mapping.dataset.format)
 
@@ -285,12 +283,20 @@ def object_field_sources(mapping: DatasetMapping) -> dict[str, str]:
     return {canonical: fm.source for canonical, fm in entity.fields.items()}
 
 
-def resolve_entity_files(mapping: DatasetMapping, base_dir: Path) -> list[Path]:
-    """Resolved paths of every entity data file the mapping references (for manifest hashing)."""
+def _entity_file_path(mapping: DatasetMapping, entity: EntityMapping, base_dir: Path) -> Path:
+    """Path to an entity's data file, lexically normalized so provenance and manifests show a
+    clean path (``examples/dirty/objects.csv``) instead of one carrying ``..`` segments from the
+    mapping's ``base_path``. ``normpath`` collapses ``..`` without resolving to an absolute path,
+    so reports stay machine-independent and reproducible."""
     base_path = Path(mapping.dataset.base_path)
     if not base_path.is_absolute():
         base_path = base_dir / base_path
-    return [base_path / entity.file for entity in mapping.entities.values()]
+    return Path(os.path.normpath(base_path / entity.file))
+
+
+def resolve_entity_files(mapping: DatasetMapping, base_dir: Path) -> list[Path]:
+    """Resolved paths of every entity data file the mapping references (for manifest hashing)."""
+    return [_entity_file_path(mapping, entity, base_dir) for entity in mapping.entities.values()]
 
 
 def _build_object(mapped: dict[str, str | list[str]], source_ref: SourceRef) -> CollectionObject:
