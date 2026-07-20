@@ -21,6 +21,7 @@ import typer
 from rich.console import Console
 from rich.table import Table
 
+from collection_integrity.canonical.mappings import DatasetMapping
 from collection_integrity.canonical.models import (
     AgentOrMaker,
     CollectionObject,
@@ -48,6 +49,7 @@ from collection_integrity.ingestion.mapper import (
     resolve_entity_files,
 )
 from collection_integrity.ingestion.readers import IngestionError
+from collection_integrity.ingestion.sources import available_sources, build_source_mapping
 from collection_integrity.reporting.csv_report import write_findings_csv
 from collection_integrity.reporting.html_report import write_html_report
 from collection_integrity.reporting.json_report import write_findings_json
@@ -80,6 +82,19 @@ def scan(
     mapping: Annotated[
         Path | None,
         typer.Option(help="Path to a dataset-mapping YAML (configurable CSV/JSON ingestion)."),
+    ] = None,
+    source: Annotated[
+        str | None,
+        typer.Option(
+            help=(
+                "Built-in source adapter to ingest a known museum open-data export with --input. "
+                f"Available: {', '.join(available_sources())}."
+            )
+        ),
+    ] = None,
+    input_path: Annotated[
+        Path | None,
+        typer.Option("--input", help="Path to the source data file/directory for --source."),
     ] = None,
     output_dir: Annotated[Path, typer.Option(help="Directory to write findings.json into.")] = Path(
         "build/scan"
@@ -126,15 +141,21 @@ def scan(
 ) -> None:
     """Scan collection objects and report deterministic integrity findings.
 
-    Provide exactly one input: --objects-csv (canonical columns) or --mapping (a dataset-mapping
-    YAML that describes an arbitrary CSV/JSON export).
+    Provide exactly one input: --objects-csv (canonical columns), --mapping (a dataset-mapping YAML
+    that describes an arbitrary CSV/JSON export), or --source NAME --input PATH (a built-in adapter
+    for a known museum open-data export).
     """
     if fail_on not in {*SEVERITY_ORDER, "none"}:
         console.print(f"[red]Invalid --fail-on value: {fail_on!r}[/red]")
         raise typer.Exit(code=2)
 
-    if (objects_csv is None) == (mapping is None):
-        console.print("[red]Provide exactly one of --objects-csv or --mapping.[/red]")
+    if (source is None) != (input_path is None):
+        console.print("[red]--source and --input must be used together.[/red]")
+        raise typer.Exit(code=2)
+    if sum(x is not None for x in (objects_csv, mapping, source)) != 1:
+        console.print(
+            "[red]Provide exactly one input: --objects-csv, --mapping, or --source/--input.[/red]"
+        )
         raise typer.Exit(code=2)
 
     started = time.monotonic()
@@ -148,8 +169,9 @@ def scan(
         raise typer.Exit(code=2)
 
     try:
+        mapping_obj, base_dir = _resolve_mapping(mapping, source, input_path)
         objects, media, rights, locations, agents, field_sources = _load_entities(
-            objects_csv, mapping
+            objects_csv, mapping_obj, base_dir
         )
     except (CsvIngestionError, IngestionError, FileNotFoundError, KeyError) as exc:
         console.print(f"[red]{exc}[/red]")
@@ -190,7 +212,13 @@ def scan(
     write_findings_csv(findings, output_dir / "findings.csv")
     write_summary_json(findings, input_counts, output_dir / "summary.json")
 
-    input_files, config_files = _report_source_files(objects_csv, mapping)
+    if objects_csv is not None:
+        input_files: list[Path] = [objects_csv]
+        config_files: list[Path] = []
+    else:
+        assert mapping_obj is not None and base_dir is not None
+        input_files = resolve_entity_files(mapping_obj, base_dir)
+        config_files = [mapping] if mapping is not None else []
     manifest = build_run_manifest(
         command="collection-ci scan",
         run_id=run_id,
@@ -293,8 +321,27 @@ def benchmark(
     raise typer.Exit(code=0 if result.meets_target else 1)
 
 
+def _resolve_mapping(
+    mapping_path: Path | None, source: str | None, input_path: Path | None
+) -> tuple[DatasetMapping | None, Path | None]:
+    """Resolve the mapping-based input modes to an (in-memory mapping, base dir) pair.
+
+    --source builds a mapping from a built-in adapter (base dir is the cwd; the adapter encodes the
+    input's own directory as the mapping base path). --mapping loads a YAML file. --objects-csv
+    uses neither and returns (None, None).
+    """
+    if source is not None:
+        assert input_path is not None  # guaranteed by the caller's paired-flag check
+        return build_source_mapping(source, input_path), Path(".")
+    if mapping_path is not None:
+        if not mapping_path.exists():
+            raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
+        return load_mapping(mapping_path), mapping_path.parent
+    return None, None
+
+
 def _load_entities(
-    objects_csv: Path | None, mapping_path: Path | None
+    objects_csv: Path | None, mapping: DatasetMapping | None, base_dir: Path | None
 ) -> tuple[
     list[CollectionObject],
     list[MediaAsset],
@@ -314,28 +361,15 @@ def _load_entities(
         # In the simple CSV path source columns already carry canonical names.
         return load_objects_from_csv(objects_csv, source_name=objects_csv.stem), [], [], [], [], {}
 
-    assert mapping_path is not None  # guaranteed by the caller's exactly-one check
-    if not mapping_path.exists():
-        raise FileNotFoundError(f"Mapping file not found: {mapping_path}")
-    mapping = load_mapping(mapping_path)
-    base = mapping_path.parent
-    objects = load_objects(mapping, base_dir=base)
-    media = load_media(mapping, base_dir=base) if has_entity(mapping, "media") else []
-    rights = load_rights(mapping, base_dir=base) if has_entity(mapping, "rights") else []
-    locations = load_locations(mapping, base_dir=base) if has_entity(mapping, "locations") else []
-    agents = load_agents(mapping, base_dir=base) if has_entity(mapping, "agents") else []
+    assert mapping is not None and base_dir is not None  # guaranteed by the caller
+    objects = load_objects(mapping, base_dir=base_dir)
+    media = load_media(mapping, base_dir=base_dir) if has_entity(mapping, "media") else []
+    rights = load_rights(mapping, base_dir=base_dir) if has_entity(mapping, "rights") else []
+    locations = (
+        load_locations(mapping, base_dir=base_dir) if has_entity(mapping, "locations") else []
+    )
+    agents = load_agents(mapping, base_dir=base_dir) if has_entity(mapping, "agents") else []
     return objects, media, rights, locations, agents, object_field_sources(mapping)
-
-
-def _report_source_files(
-    objects_csv: Path | None, mapping_path: Path | None
-) -> tuple[list[Path], list[Path]]:
-    """(input data files, config files) to hash into the run manifest."""
-    if objects_csv is not None:
-        return [objects_csv], []
-    assert mapping_path is not None
-    mapping = load_mapping(mapping_path)
-    return resolve_entity_files(mapping, mapping_path.parent), [mapping_path]
 
 
 def _print_console_summary(objects: list, findings: list) -> None:  # type: ignore[type-arg]

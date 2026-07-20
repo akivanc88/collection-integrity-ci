@@ -1066,3 +1066,64 @@ confirmed by hand: the traced CORE001 duplicate keeps fingerprint `0da315c3…` 
 
 **Next slice:** unchanged — Phase 4 (Met CSV source adapter), or one of the pending validation loops
 (VL-05 fuzz / VL-08 README-executes).
+
+---
+
+## 2026-07-19 — Loop 25: Phase 4 Slice O — source-adapter framework + Met adapter
+
+**Slice:** New `/goal` — complete all Phase 4 slices (Met/Cleveland/NGA source adapters + bounded
+download scripts + attribution docs), each with >=2 validated iterations on AI-generated datasets.
+Slice O is the adapter framework and the first adapter (the Met).
+
+**Design decision:** a "source adapter" is a *built-in, versioned `DatasetMapping` profile* for a
+known institution's published open-data schema, not a new ingestion path. The adapter constructs
+the same mapping the YAML path uses, so the entire existing ingestion/transform/provenance/rule
+pipeline is reused unchanged. This keeps the new code tiny and inherits all prior validation. Only
+genuinely relational sources (the NGA link table, Slice Q) will need bespoke loading.
+
+**Files created/changed:**
+
+- `ingestion/source_base.py` (new) — `build_objects_mapping()` shared by single-file adapters; the
+  `SourceBuilder` type.
+- `ingestion/met_adapter.py` (new) — `FIELD_MAP` from canonical fields to the real
+  `MetObjects.csv` headers (`Object Number`, `Object ID`, `Object Begin/End Date`, ...) and
+  `build_mapping()`.
+- `ingestion/sources.py` (new) — the source registry (`available_sources`, `build_source_mapping`)
+  with name + input-existence validation.
+- `cli.py` — added `--source NAME --input PATH` as a third input mode alongside `--objects-csv` /
+  `--mapping`; refactored input resolution into `_resolve_mapping()` and made `_load_entities`
+  operate on an in-memory `DatasetMapping` + base dir (removing a duplicate mapping load for the
+  manifest). Exactly-one-input and paired-flag validation with exit code 2.
+- `benchmark/source_fixtures.py` (new) — `write_met_dataset()` emits a **real-Met-schema** CSV with
+  disjoint, leakage-free labeled injected errors (CORE001/002, DATE001, SCHEMA001), plus `score()`
+  (precision/recall/F1 vs. ground truth). Reusable by the Cleveland/NGA slices.
+- Tests: `tests/integration/test_met_adapter.py`, `tests/integration/test_source_cli.py`.
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (43 source files)
+uv run pytest -q                                                       # 177 passed
+uv run collection-ci scan --source met --input <MetObjects.csv> --fail-on none
+  # -> real Met columns ingested; CORE001 dup accession, DATE001 inverted range, SCHEMA001
+  #    invalid Object Begin Date all detected from the Met's native headers
+```
+
+**Iteration 1 (accuracy on AI-generated data):** a generated Met-schema dataset (40 clean + 12
+injected across four rules) ingested through the `met` adapter scores **precision = recall = 1.0**
+on every injected rule, with zero findings on the clean rows and no rule outside the injected set
+firing. A determinism test confirms the generator is byte-reproducible; a shape test pins the Met
+column headers + `object_id` primary key. CLI end-to-end test asserts the summary counts, exit
+codes, and that the run manifest hashes the real input file (no config file in source mode).
+
+**Iteration 2 (VL-06 mutation):** mutation loop on the Slice O code (7 mutations: wrong accession
+column, wrong begin-date column, unknown-source not rejected, missing-input not rejected, wrong
+primary-key default, inverted paired-flag check, weakened exactly-one-input check). First pass
+**2 survivors** — no test asserted (a) `--source --input <missing>` errors, or (b) the mapping's
+`primary_key` (the fixture's title was always non-empty, masking the swap). Added a missing-input
+CLI test and a `primary_key == "object_id"` assertion. Re-ran: **7/7 killed, zero survivors.**
+
+Slice O validation approved (accuracy P=R=1.0 + CLI e2e + determinism, and VL-06).
+
+**Next slice:** Slice P — Cleveland Museum of Art adapter (CSV and JSON), reusing the fixture/score
+harness, with two validated iterations.
