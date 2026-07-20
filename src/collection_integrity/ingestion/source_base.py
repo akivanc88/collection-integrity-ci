@@ -13,6 +13,7 @@ a flat mapping cannot express) build their own mapping and loader.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Literal
 
@@ -22,9 +23,75 @@ from collection_integrity.canonical.mappings import (
     EntityMapping,
     coerce_field_mapping,
 )
+from collection_integrity.canonical.models import (
+    AgentOrMaker,
+    CollectionObject,
+    LocationRecord,
+    MediaAsset,
+    RightsRecord,
+)
 
 # An adapter turns an input path (a file, or for multi-file sources a directory) into a mapping.
 SourceBuilder = Callable[[Path], DatasetMapping]
+
+
+@dataclass
+class SourceLoad:
+    """Canonical entities produced by a source adapter, plus what the run manifest needs.
+
+    `object_field_sources` maps canonical object fields to their source columns (SCHEMA001 uses it
+    to report the offending raw value); `input_files` are the data files to hash into the manifest.
+    """
+
+    objects: list[CollectionObject]
+    media: list[MediaAsset] = field(default_factory=list)
+    rights: list[RightsRecord] = field(default_factory=list)
+    locations: list[LocationRecord] = field(default_factory=list)
+    agents: list[AgentOrMaker] = field(default_factory=list)
+    object_field_sources: dict[str, str] = field(default_factory=dict)
+    input_files: list[Path] = field(default_factory=list)
+
+
+# An adapter loads an input path into canonical entities.
+SourceLoader = Callable[[Path], SourceLoad]
+
+
+def load_from_mapping(mapping: DatasetMapping, base_dir: Path) -> SourceLoad:
+    """Load a `DatasetMapping` through the standard mapper into a `SourceLoad`.
+
+    Used by the single-file adapters (Met, Cleveland). Imported lazily to avoid a module-load
+    cycle with the mapper.
+    """
+    from collection_integrity.ingestion import mapper
+
+    objects = mapper.load_objects(mapping, base_dir=base_dir)
+    media = (
+        mapper.load_media(mapping, base_dir=base_dir) if mapper.has_entity(mapping, "media") else []
+    )
+    rights = (
+        mapper.load_rights(mapping, base_dir=base_dir)
+        if mapper.has_entity(mapping, "rights")
+        else []
+    )
+    locations = (
+        mapper.load_locations(mapping, base_dir=base_dir)
+        if mapper.has_entity(mapping, "locations")
+        else []
+    )
+    agents = (
+        mapper.load_agents(mapping, base_dir=base_dir)
+        if mapper.has_entity(mapping, "agents")
+        else []
+    )
+    return SourceLoad(
+        objects=objects,
+        media=media,
+        rights=rights,
+        locations=locations,
+        agents=agents,
+        object_field_sources=mapper.object_field_sources(mapping),
+        input_files=mapper.resolve_entity_files(mapping, base_dir),
+    )
 
 
 def build_objects_mapping(

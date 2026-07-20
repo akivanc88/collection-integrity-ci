@@ -1172,3 +1172,57 @@ Slice P validation approved (accuracy P=R=1.0 in both formats + CSV/JSON equival
 **Next slice:** Slice Q — National Gallery of Art adapter, the relational one: a many-to-many
 object<->constituent link table joined to populate agents + maker links, exercising DATE002 (agent
 lifespan vs. production date) which a flat mapping cannot express.
+
+---
+
+## 2026-07-19 — Loop 27: Phase 4 Slice Q — NGA relational adapter (link-table join + DATE002)
+
+**Slice:** The National Gallery of Art Open Data adapter — the one source that is genuinely
+relational (`objects.csv` + a many-to-many `objects_constituents.csv` link table +
+`constituents.csv`), which a flat column mapping cannot express.
+
+**Design:** introduced a `SourceLoad` abstraction (canonical entities + object field sources +
+input-file list) and `load_from_mapping()` in `source_base`, so all three adapters return loaded
+entities uniformly and the CLI has one ingestion path. Met and Cleveland now expose `load()` that
+routes through `load_from_mapping`; the CLI's three input modes were unified into a single `_ingest`
+(the `--mapping` path now reuses `load_from_mapping` too, removing a duplicate mapping load). The NGA
+adapter reuses the ordinary mapper for `objects.csv` (objects entity) and `constituents.csv` (agents
+entity) — inheriting provenance, date parsing, and SCHEMA001 field sources — and adds only the join:
+it reads the link table into `{objectid: [constituentid,...]}` (ordered by displayorder) and stamps
+each frozen object's `maker_ids` via `model_copy`. That maker link is what lets **DATE002** (production
+after the linked maker's death) run.
+
+**Files created/changed:** `ingestion/source_base.py` (`SourceLoad`, `SourceLoader`,
+`load_from_mapping`), `ingestion/nga_adapter.py` (new — mapping + `_maker_ids_by_object` join +
+`load`), `ingestion/met_adapter.py` / `cleveland_adapter.py` (added `load`), `ingestion/sources.py`
+(registry now maps to loaders; `load_source` replaces `build_source_mapping`), `cli.py` (unified
+`_ingest`), `benchmark/source_fixtures.py` (`write_nga_dataset` — 3-file NGA-schema generator with
+labeled DATE002 conflicts + object-level errors, disjoint and leakage-free). Tests:
+`tests/integration/test_nga_adapter.py`; updated the Met/Cleveland test helpers to use `load_source`.
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (45 source files)
+uv run pytest -q                                                       # 186 passed
+uv run collection-ci scan --source nga --input <dir> --fail-on none
+  # -> 46 objects; CORE001 + DATE001 + SCHEMA001 + DATE002 all fire; manifest hashes all 3 files
+```
+
+**Iteration 1 (accuracy on AI-generated data):** a generated NGA-schema directory scores
+**precision = recall = 1.0** for CORE001, DATE001, SCHEMA001, and **DATE002** — the last of which
+only fires because the link table was joined correctly. Extra tests assert the join populates
+`maker_ids` (incl. a two-maker object), that maker order follows `displayorder` regardless of
+link-row order, and that a missing link table errors clearly.
+
+**Iteration 2 (VL-06 mutation):** mutation loop on the NGA adapter (6 mutations: object accession /
+begin-date / agent death-date mapped to wrong columns, maker_ids not stamped from the join, link
+order not sorted, missing-link-table not rejected). **6/6 killed on the first pass, zero survivors**
+— notably the join-not-stamped mutant (DATE002 recall -> 0) and the order-not-sorted mutant (caught
+by the reversed-link determinism test).
+
+Slice Q validation approved (accuracy P=R=1.0 incl. DATE002 + VL-06). The Met/Cleveland refactor to
+`load_source` kept all prior tests green (186 passing).
+
+**Next slice:** Slice R — bounded sample-download scripts (`--limit`, explicit local paths, never a
+full auto-download) and `docs/DATA_SOURCES.md` provenance/attribution, completing Phase 4.

@@ -21,8 +21,7 @@ from collection_integrity.benchmark.source_fixtures import (
     write_dataset,
 )
 from collection_integrity.ingestion import cleveland_adapter
-from collection_integrity.ingestion.mapper import load_objects, object_field_sources
-from collection_integrity.ingestion.sources import build_source_mapping
+from collection_integrity.ingestion.sources import load_source
 from collection_integrity.rules.base import RuleContext
 from collection_integrity.rules.registry import RuleRegistry
 
@@ -30,12 +29,11 @@ DEFAULT_REQUIRED = ["accession_number", "object_name"]
 
 
 def _scan(path: Path) -> list:  # type: ignore[type-arg]
-    mapping = build_source_mapping("cleveland", path)
-    objects = load_objects(mapping, base_dir=Path("."))
+    loaded = load_source("cleveland", path)
     ctx = RuleContext(
-        objects=objects,
+        objects=loaded.objects,
         required_fields=DEFAULT_REQUIRED,
-        object_field_sources=object_field_sources(mapping),
+        object_field_sources=loaded.object_field_sources,
     )
     return RuleRegistry.with_defaults().evaluate(ctx)
 

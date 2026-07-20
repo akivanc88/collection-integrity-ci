@@ -18,7 +18,11 @@ from __future__ import annotations
 from pathlib import Path
 
 from collection_integrity.canonical.mappings import DatasetMapping
-from collection_integrity.ingestion.source_base import build_objects_mapping
+from collection_integrity.ingestion.source_base import (
+    SourceLoad,
+    build_objects_mapping,
+    load_from_mapping,
+)
 
 SOURCE_NAME = "met"
 DESCRIPTION = "Metropolitan Museum of Art Open Access (MetObjects.csv, CC0)"
@@ -39,3 +43,8 @@ FIELD_MAP = {
 def build_mapping(input_path: Path) -> DatasetMapping:
     """Build the Met objects mapping for a `MetObjects.csv`-shaped file at `input_path`."""
     return build_objects_mapping(name=SOURCE_NAME, input_path=input_path, fields=FIELD_MAP)
+
+
+def load(input_path: Path) -> SourceLoad:
+    """Ingest a `MetObjects.csv` file into canonical entities."""
+    return load_from_mapping(build_mapping(input_path), Path("."))

@@ -16,7 +16,11 @@ from pathlib import Path
 from typing import Literal
 
 from collection_integrity.canonical.mappings import DatasetMapping
-from collection_integrity.ingestion.source_base import build_objects_mapping
+from collection_integrity.ingestion.source_base import (
+    SourceLoad,
+    build_objects_mapping,
+    load_from_mapping,
+)
 
 SOURCE_NAME = "cleveland"
 DESCRIPTION = "Cleveland Museum of Art Open Access (openaccess.csv/.json, CC0)"
@@ -43,3 +47,8 @@ def build_mapping(input_path: Path) -> DatasetMapping:
     return build_objects_mapping(
         name=SOURCE_NAME, input_path=input_path, fields=FIELD_MAP, fmt=_format_for(input_path)
     )
+
+
+def load(input_path: Path) -> SourceLoad:
+    """Ingest a Cleveland `openaccess.csv`/`.json` file into canonical entities."""
+    return load_from_mapping(build_mapping(input_path), Path("."))

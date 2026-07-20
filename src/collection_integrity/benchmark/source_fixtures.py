@@ -25,6 +25,7 @@ from pathlib import Path
 CORE001 = "CORE001_DUPLICATE_ACCESSION_NUMBER"
 CORE002 = "CORE002_REQUIRED_FIELD_MISSING"
 DATE001 = "DATE001_INVERTED_DATE_RANGE"
+DATE002 = "DATE002_IMPOSSIBLE_AGENT_LIFESPAN_CONFLICT"
 SCHEMA001 = "SCHEMA001_INVALID_FIELD_TYPE"
 
 
@@ -169,6 +170,116 @@ def write_met_dataset(
     return write_dataset(
         path, MET_SPEC, fmt="csv", clean_count=clean_count, injected_per_rule=injected_per_rule
     )
+
+
+NGA_OBJECT_COLUMNS = [
+    "objectid",
+    "accessionnum",
+    "title",
+    "classification",
+    "departmentabbr",
+    "beginyear",
+    "endyear",
+]
+NGA_CONSTITUENT_COLUMNS = [
+    "constituentid",
+    "preferreddisplayname",
+    "nationality",
+    "beginyear",
+    "endyear",
+]
+NGA_LINK_COLUMNS = ["objectid", "constituentid", "displayorder"]
+
+
+def write_nga_dataset(
+    directory: Path, *, clean_count: int = 30, injected_per_rule: int = 3
+) -> SourceScenario:
+    """Write an NGA opendata-schema directory (objects + constituents + link table) with labeled
+    errors, exercising the relational join. Beyond the object-level rules (CORE001, DATE001,
+    SCHEMA001) it injects DATE002 (production after the linked maker's death), which only fires when
+    the many-to-many link is correctly assembled. Clean objects link to makers whose lifespans cover
+    the production year; injected DATE001/SCHEMA001 rows use wide-lifespan makers so they stay
+    disjoint from DATE002.
+    """
+    scenario = SourceScenario()
+    objects: list[dict[str, str]] = []
+    constituents: list[dict[str, str]] = []
+    links: list[dict[str, str]] = []
+    oid = cid = 0
+
+    def maker(birth: int, death: int) -> str:
+        nonlocal cid
+        c = f"C-{cid:04d}"
+        cid += 1
+        constituents.append(
+            {
+                "constituentid": c,
+                "preferreddisplayname": f"Maker {c}",
+                "nationality": "American",
+                "beginyear": str(birth),
+                "endyear": str(death),
+            }
+        )
+        return c
+
+    def obj(accession: str, begin: str, end: str, makers: list[str]) -> str:
+        nonlocal oid
+        o = f"NGA-OBJ-{oid:04d}"
+        oid += 1
+        objects.append(
+            {
+                "objectid": o,
+                "accessionnum": accession,
+                "title": f"Untitled {o}",
+                "classification": "Painting",
+                "departmentabbr": "CG",
+                "beginyear": begin,
+                "endyear": end,
+            }
+        )
+        for order, m in enumerate(makers):
+            links.append({"objectid": o, "constituentid": m, "displayorder": str(order)})
+        return o
+
+    for i in range(clean_count):
+        obj(f"2000.{i}.1", "1850", "1850", [maker(1820, 1890)])
+    if clean_count:  # one clean object with two makers, both covering 1850 (many-to-many path)
+        obj("2000.multi.1", "1850", "1850", [maker(1800, 1880), maker(1810, 1900)])
+
+    # DATE002: production began after the linked maker died (needs the join to detect).
+    for i in range(injected_per_rule):
+        o = obj(f"D2.{i}.1", "1900", "1900", [maker(1820, 1850)])
+        scenario.add(DATE002, o)
+
+    # CORE001: duplicate accession (both rows well-formed and lifespan-consistent).
+    for i in range(injected_per_rule):
+        acc = f"DUP.{i}.1"
+        obj(acc, "1850", "1850", [maker(1820, 1890)])
+        obj(acc, "1860", "1860", [maker(1830, 1900)])
+        scenario.add(CORE001, acc)
+
+    # DATE001: inverted production range; wide-lifespan maker keeps it disjoint from DATE002.
+    for i in range(injected_per_rule):
+        o = obj(f"INV.{i}.1", "1900", "1850", [maker(1800, 1950)])
+        scenario.add(DATE001, o)
+
+    # SCHEMA001: unparseable begin date (DATE002 skips it — no valid production start).
+    for i in range(injected_per_rule):
+        o = obj(f"BAD.{i}.1", "not-a-year", "1900", [maker(1800, 1950)])
+        scenario.add(SCHEMA001, o)
+
+    directory.mkdir(parents=True, exist_ok=True)
+    _write_csv(directory / "objects.csv", NGA_OBJECT_COLUMNS, objects)
+    _write_csv(directory / "constituents.csv", NGA_CONSTITUENT_COLUMNS, constituents)
+    _write_csv(directory / "objects_constituents.csv", NGA_LINK_COLUMNS, links)
+    return scenario
+
+
+def _write_csv(path: Path, columns: list[str], rows: list[dict[str, str]]) -> None:
+    with path.open("w", newline="", encoding="utf-8") as fh:
+        writer = csv.writer(fh)
+        writer.writerow(columns)
+        writer.writerows([[r[c] for c in columns] for r in rows])
 
 
 def score(findings: list, scenario: SourceScenario) -> dict[str, dict[str, float]]:  # type: ignore[type-arg]
