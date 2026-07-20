@@ -1127,3 +1127,48 @@ Slice O validation approved (accuracy P=R=1.0 + CLI e2e + determinism, and VL-06
 
 **Next slice:** Slice P — Cleveland Museum of Art adapter (CSV and JSON), reusing the fixture/score
 harness, with two validated iterations.
+
+---
+
+## 2026-07-19 — Loop 26: Phase 4 Slice P — Cleveland adapter (CSV + JSON)
+
+**Slice:** The Cleveland Museum of Art Open Access adapter, which publishes the same schema as both
+`openaccess.csv` and `openaccess.json` — so the adapter picks the format from the file extension and
+one field map serves both.
+
+**Files created/changed:**
+
+- `ingestion/cleveland_adapter.py` (new) — `FIELD_MAP` to the real Cleveland columns (`id`,
+  `accession_number`, `type`, `creation_date_earliest/latest`, ...), `_format_for()` (extension ->
+  csv/json), `build_mapping()`.
+- `ingestion/sources.py` — registered `cleveland`.
+- `benchmark/source_fixtures.py` — refactored to be schema-driven: a `SchemaSpec` (canonical field
+  -> source column) plus `write_dataset(path, spec, fmt=...)` serializing identical rows/injections
+  as CSV or JSON. `MET_SPEC` + `CLEVELAND_SPEC`; `write_met_dataset` kept as a thin wrapper so
+  Slice O's tests are unchanged.
+- Tests: `tests/integration/test_cleveland_adapter.py`.
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (44 source files)
+uv run pytest -q                                                       # 182 passed
+```
+
+**Iteration 1 (accuracy + CSV/JSON equivalence on AI-generated data):** a Cleveland-schema dataset
+(40 clean + 12 injected) ingested through the `cleveland` adapter scores **precision = recall = 1.0**
+for CORE001/002, DATE001, SCHEMA001 in **both CSV and JSON**, with zero findings on clean rows. A
+dedicated test asserts CSV and JSON yield the **identical finding fingerprint set** (the reader
+paths converge on the same canonical records), and a shape test pins the format-by-extension logic
+and column names.
+
+**Iteration 2 (VL-06 mutation):** mutation loop on the Cleveland adapter (4 mutations: accession
+mapped to wrong column, start-date mapped to wrong column, format forced always-csv, format forced
+always-json). **4/4 killed on the first pass, zero survivors** — the format-forcing mutants are
+caught because reading a JSON file as CSV (and vice-versa) breaks the equivalence/accuracy tests.
+
+Slice P validation approved (accuracy P=R=1.0 in both formats + CSV/JSON equivalence + VL-06).
+
+**Next slice:** Slice Q — National Gallery of Art adapter, the relational one: a many-to-many
+object<->constituent link table joined to populate agents + maker links, exercising DATE002 (agent
+lifespan vs. production date) which a flat mapping cannot express.

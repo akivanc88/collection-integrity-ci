@@ -10,16 +10,18 @@ from __future__ import annotations
 from pathlib import Path
 
 from collection_integrity.canonical.mappings import DatasetMapping
-from collection_integrity.ingestion import met_adapter
+from collection_integrity.ingestion import cleveland_adapter, met_adapter
 from collection_integrity.ingestion.readers import IngestionError
 from collection_integrity.ingestion.source_base import SourceBuilder
 
 _SOURCES: dict[str, SourceBuilder] = {
     met_adapter.SOURCE_NAME: met_adapter.build_mapping,
+    cleveland_adapter.SOURCE_NAME: cleveland_adapter.build_mapping,
 }
 
 _DESCRIPTIONS: dict[str, str] = {
     met_adapter.SOURCE_NAME: met_adapter.DESCRIPTION,
+    cleveland_adapter.SOURCE_NAME: cleveland_adapter.DESCRIPTION,
 }
 
 
