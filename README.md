@@ -11,17 +11,35 @@ to resolve.
 Full specification: [`BUILD_BRIEF.md`](./BUILD_BRIEF.md). Build status and what actually works
 right now: [`docs/PROGRESS.md`](./docs/PROGRESS.md).
 
-**Status: early Phase 1 (Foundation).** The CLI, rule engine, and full report set described below
-are not all implemented yet. This section will be replaced with a real quick start once the
-Definition of Done in `BUILD_BRIEF.md` Section 25 is met.
+**Status: Phases 0–5 complete.** The deterministic engine (15 rules), the JSON/CSV/HTML/SARIF
+report set, baselines, the benchmark, the Met/Cleveland/NGA source adapters, and the local web
+viewer all work offline with no API keys. See [`docs/PROGRESS.md`](./docs/PROGRESS.md) for the
+loop-by-loop build log.
 
-## Quick start (target, not yet fully implemented)
+## Quick start
+
+Requires [`uv`](https://docs.astral.sh/uv/). Everything below runs offline — no network, no API
+keys.
 
 ```bash
 uv sync
-uv run collection-ci scan --mapping examples/mappings/clean.yaml --rules rulesets/core.yaml \
-  --output-dir build/scan
+
+# Scan a clean example export — passes every check, exits 0, writes the full report set.
+uv run collection-ci scan --mapping examples/mappings/clean.yaml --output-dir build/scan
+
+# Scan a deliberately dirty export — surfaces findings and exits 1 (the CI-failure signal).
+uv run collection-ci scan --mapping examples/mappings/dirty.yaml --output-dir build/scan-dirty
+
+# Open build/scan-dirty/report.html in a browser, or explore it in the local web viewer:
+uv run collection-ci serve --run-dir build/scan-dirty   # http://127.0.0.1:8000
+
+# Score rule precision/recall/F1 against the labeled synthetic benchmark.
+uv run collection-ci benchmark --output-dir build/benchmark
 ```
+
+Each `scan` writes `findings.json`, `findings.csv`, `report.html`, `results.sarif`,
+`run_manifest.json`, and `summary.json` to the output directory. Exit codes: `0` (no failures),
+`1` (failure threshold reached), `2` (invalid input/config), `3` (internal error).
 
 ## License
 
