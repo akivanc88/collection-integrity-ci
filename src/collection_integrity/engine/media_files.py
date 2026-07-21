@@ -36,7 +36,7 @@ def read_image_size(path: Path) -> tuple[int, int] | None:
     try:
         with Image.open(path) as img:
             return int(img.width), int(img.height)
-    except (UnidentifiedImageError, OSError, ValueError):
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
         return None
 
 
@@ -46,5 +46,5 @@ def is_readable_image(path: Path) -> bool:
         with Image.open(path) as img:
             img.verify()
         return True
-    except (UnidentifiedImageError, OSError, ValueError):
+    except (UnidentifiedImageError, OSError, ValueError, Image.DecompressionBombError):
         return False

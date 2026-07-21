@@ -1,0 +1,3 @@
+object_id,accession_number,object_name,title
+OBJ-1,=cmd|'/c calc'!A1,Vase,"@SUM(1+1)"
+OBJ-2,=cmd|'/c calc'!A1,Bowl,-2+3
