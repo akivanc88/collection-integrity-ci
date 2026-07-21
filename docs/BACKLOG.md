@@ -38,8 +38,9 @@ TODOs and deferred work, with rationale and rough priority, per `BUILD_BRIEF.md`
   current mutation loop uses a curated, hand-written list of defects (see `docs/PROGRESS.md`
   Loop 5); a mutation-testing tool would explore the full mutation space automatically. Deferred
   until the rule set is larger and worth the CI runtime.
-- **Wire coverage.py with a threshold (VL-07).** Rationale: coverage is in the brief's stack but
-  not yet configured; belongs with the other Section 20 CI steps.
+- ~~**Wire coverage.py with a threshold (VL-07).**~~ Done 2026-07-21: `pytest-cov` added,
+  `[tool.coverage.report] fail_under = 95` set in `pyproject.toml`, coverage step + `coverage.xml`
+  upload added to `ci.yml`. Baseline coverage 96.72%; ratchet verified to fail below the floor.
 
 ## Low priority / explicitly deferred
 
