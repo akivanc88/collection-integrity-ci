@@ -1548,3 +1548,31 @@ executed with the documented outcomes from a checkout that had never been built 
 
 **Next:** VL-10 (Definition-of-Done closure), which walks BUILD_BRIEF.md Section 25 top-to-bottom and
 opens the Phase 7 gate.
+
+---
+
+## 2026-07-21 — Loop: VL-10 Definition-of-Done closure (Phase 7 gate OPEN)
+
+**Slice:** Execute BUILD_BRIEF.md Section 25 top-to-bottom rather than asserting it — the release
+gate and the precondition for the Phase 7 showcase. Captured as a reusable, committed runner
+`scripts/check_dod.sh`. Fifth and final of the endgame validation loops.
+
+**Iteration 1 (fresh clone @ 202d71b):** all 18 checks PASSED in one uninterrupted run —
+uv sync / ruff / format / mypy / pytest (coverage ratchet) / wheel build / clean scan (exit 0, 0
+findings) / dirty scan (exit 1; CORE001, CORE002, DATE001, SCHEMA001) / benchmark (meets target) /
+HTML self-contained / SARIF 2.1.0 structure / secret-free workflows / README matches CLI /
+manifest offline flags (no AI, no network) / source data unmodified / limitations documented /
+progress+threat docs present / demo baseline `--only-new` (0 new, exit 0).
+
+**Iteration 2 (validation approved):** re-ran from a second fresh clone — **ALL CHECKS PASSED**
+again, confirming the DoD is reproducible and deterministic, not a one-off.
+
+**Result:** the Definition of Done is met. The Phase 7 gate ("only begin after DoD passes") is now
+open. Publishing remains approval-gated — the showcase site will be built and verified locally
+(`mkdocs build`) only, with no push/Pages-enable until explicit user approval.
+
+**Endgame validation status:** VL-04 ✅, VL-05 ✅, VL-07 ✅, VL-08 ✅, VL-10 ✅.
+
+**Next:** Phase 7 — build the MkDocs Material dual-story showcase (product home, "How this was
+built" loop-engineering case study, "About the builder"), add the gh-pages workflow (no secrets),
+verify `mkdocs build` locally, then stop for approval to publish.
