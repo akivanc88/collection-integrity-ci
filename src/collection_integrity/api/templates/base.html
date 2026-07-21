@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Collection Integrity CI{% endblock %}</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #5a5a5a; --border: #d9d9d9;
+    --card: #f7f7f7; --link: #0b5cad; --accent: #0b5cad;
+    --critical: #b00020; --high: #c05600; --medium: #8a6d00; --low: #40607a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16181c; --fg: #e8e8e8; --muted: #a0a0a0; --border: #33373d;
+      --card: #1e2126; --link: #7db6f2; --accent: #7db6f2;
+      --critical: #ff6b7d; --high: #ffab5e; --medium: #e6c84c; --low: #8fb3cc;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  a { color: var(--link); }
+  .skip { position: absolute; left: -999px; }
+  .skip:focus { left: 8px; top: 8px; background: var(--bg); padding: 8px; z-index: 10; }
+  header { border-bottom: 1px solid var(--border); padding: 12px 20px;
+    display: flex; gap: 20px; align-items: baseline; flex-wrap: wrap; }
+  header .brand { font-weight: 700; }
+  nav a { margin-right: 16px; text-decoration: none; }
+  nav a[aria-current="page"] { text-decoration: underline; font-weight: 600; }
+  main { max-width: 1000px; margin: 0 auto; padding: 24px 20px 48px; }
+  h1 { font-size: 1.5rem; margin: 0 0 16px; }
+  h2 { font-size: 1.15rem; margin: 28px 0 12px; }
+  .muted { color: var(--muted); }
+  .cards { display: flex; flex-wrap: wrap; gap: 12px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; min-width: 120px; }
+  .card .n { font-size: 1.6rem; font-weight: 700; }
+  table { border-collapse: collapse; width: 100%; }
+  .scroll { overflow-x: auto; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border);
+    vertical-align: top; }
+  th { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.03em; color: var(--muted); }
+  .sev { display: inline-block; font-weight: 700; font-size: 0.8rem; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px; border: 1.5px solid currentColor; }
+  .sev-critical { color: var(--critical); }
+  .sev-high { color: var(--high); }
+  .sev-medium { color: var(--medium); }
+  .sev-low { color: var(--low); }
+  form.filters { display: flex; gap: 12px; flex-wrap: wrap; align-items: end; margin: 8px 0 20px; }
+  label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; }
+  select, button { font: inherit; padding: 6px 10px; border: 1px solid var(--border);
+    border-radius: 6px; background: var(--bg); color: var(--fg); }
+  button { background: var(--accent); color: var(--bg); border-color: var(--accent);
+    cursor: pointer; font-weight: 600; }
+  .evidence { background: var(--card); border: 1px solid var(--border); border-radius: 6px;
+    padding: 10px 12px; margin: 6px 0; font-family: ui-monospace, monospace; font-size: 0.85rem; }
+  code { font-family: ui-monospace, monospace; }
+  footer { border-top: 1px solid var(--border); padding: 16px 20px; color: var(--muted);
+    font-size: 0.85rem; max-width: 1000px; margin: 0 auto; }
+  .empty { padding: 32px; text-align: center; color: var(--muted);
+    border: 1px dashed var(--border); border-radius: 8px; }
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<header>
+  <span class="brand">Collection Integrity CI</span>
+  <nav aria-label="Primary">
+    <a href="/" {% if page == 'dashboard' %}aria-current="page"{% endif %}>Dashboard</a>
+    <a href="/findings" {% if page == 'findings' %}aria-current="page"{% endif %}>Findings</a>
+    <a href="/report">HTML report</a>
+  </nav>
+</header>
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+<footer>
+  These are deterministic data-integrity findings for review — policy consistency, not legal advice.
+  The viewer is read-only and offline; it does not modify your data.
+</footer>
+</body>
+</html>

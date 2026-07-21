@@ -1350,3 +1350,70 @@ Slice S validation approved (API accuracy on AI data + VL-06).
 **Next slice:** Slice T — the server-rendered accessible UI (dashboard, filterable findings table,
 finding detail with the evidence chain), self-contained assets, XSS-safe, linking to the standalone
 report.html.
+
+---
+
+## 2026-07-21 — Loop 30: Phase 5 Slice T — server-rendered accessible viewer UI
+
+**Slice:** The HTML viewer on top of Slice S's API — a dashboard, a filterable findings table, and a
+finding-detail page with the evidence chain, plus a route serving the standalone report.html.
+
+**Files created/changed:** `api/views.py` (`register_views`: `/` dashboard, `/findings` with
+severity/rule query-param filters, `/findings/{fingerprint}` detail, `/report`); `api/templates/`
+(`base.html` with inline self-contained CSS — theme-aware light/dark, severity as text label + color
+for accessibility; `dashboard.html`, `findings.html`, `detail.html`); `api/app.py` (registers the
+views); `docs/FUTURE_SCOPE.md` (new, Section 6 deliverable referenced by ADR 007). Tests:
+`tests/integration/test_viewer_ui.py`.
+
+**Commands run and results:**
+
+```bash
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (50 source files)
+uv run pytest -q                                                       # 214 passed
+uv build && (check wheel)                                              # templates ship in the wheel
+collection-ci serve --run-dir <run> --port 8137                        # real uvicorn server:
+  curl /api/health -> total_findings 12 ; GET / and /findings?severity=critical -> HTTP 200
+```
+
+**Iteration 1 (UI correctness + safety on AI data):** rendered against a genuine scan run from
+AI-generated Met data — the dashboard shows the real severity counts (critical card = 3) and links
+each rule into its filtered view; the findings table lists all 12 with one severity chip per row;
+filtering to DATE001 narrows to exactly 3 rows with no CORE001 content leaking; the detail page shows
+the evidence chain, recommendation, and fingerprint and 404s on an unknown one; pages are
+self-contained (asserted no `src="http"`/`href="http"`/`@import`/`cdn`) and accessible (`lang`, skip
+link, `id="main"`, `scope="col"` headers); a crafted `<script>` finding summary renders **escaped**
+(`&lt;script&gt;`), never live. The `/report` route serves report.html and 404s when it is absent.
+Also verified the real `collection-ci serve` process answers over HTTP (TestClient alone does not
+exercise uvicorn).
+
+**Iteration 2 (VL-06 mutation):** mutation loop on `views.py` (5 mutations: filters ignored, "total"
+shows filtered count, detail never 404s, report never 404s, dashboard severity counts blanked).
+**5/5 killed on the first pass, zero survivors.**
+
+Slice T validation approved (UI correctness + XSS-safety + accessibility + real-server smoke, and
+VL-06).
+
+---
+
+## 2026-07-21 — Phase 5 complete
+
+Both Phase 5 slices done, each with two validated iterations (accuracy on AI-generated data via
+TestClient + VL-06 mutation):
+
+- Slice S: viewer API foundation — `serve` command, read-only `RunView` loader, JSON API
+- Slice T: server-rendered accessible UI — dashboard, filterable findings, detail, report route
+
+**Phase 5 checklist (BUILD_BRIEF.md Section 24 + Section 7):** local FastAPI web viewer (done,
+server-rendered per the brief's simpler-stack option), read-only and offline (done), polished +
+accessible + self-contained (done), `collection-ci serve` (done), ADR 007 recording the architecture
+(done), `docs/FUTURE_SCOPE.md` (done). Gate honored: built only after the engine/reports/benchmark/
+tests were stable.
+
+**Aggregate:** 214 tests passing, ruff + mypy clean, wheel builds with templates included. The viewer
+adds `fastapi`/`uvicorn` (runtime) + `httpx` (dev); the offline core still makes no network calls and
+the viewer is read-only. Commits c57e449..(this loop), none pushed (no git remote).
+
+**Next (Phase 6+):** the optional, opt-in, disabled-by-default ArtiFact/probabilistic experiment
+(Phase 6), then the approval-gated GitHub Pages showcase (Phase 7). Remaining validation loops: VL-04
+(broaden adversarial fixtures), VL-05 (Hypothesis fuzz), VL-07 (coverage ratchet in CI), VL-08
+(README quick start executes), VL-10 (final Definition-of-Done pass).

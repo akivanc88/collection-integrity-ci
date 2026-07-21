@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% set page = 'findings' %}
+{% block title %}Findings — Collection Integrity CI{% endblock %}
+{% block content %}
+<h1>Findings</h1>
+
+<form class="filters" method="get" action="/findings" role="search" aria-label="Filter findings">
+  <div>
+    <label for="severity">Severity</label>
+    <select id="severity" name="severity">
+      <option value="">All</option>
+      {% for s in severities %}
+      <option value="{{ s }}" {% if s == severity %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="rule">Rule</label>
+    <select id="rule" name="rule">
+      <option value="">All</option>
+      {% for r in rule_ids %}
+      <option value="{{ r }}" {% if r == rule %}selected{% endif %}>{{ r }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button type="submit">Apply</button>
+  {% if severity or rule %}<a href="/findings">Clear</a>{% endif %}
+</form>
+
+<p class="muted" aria-live="polite">Showing {{ findings | length }} of {{ total }} findings.</p>
+
+{% if findings %}
+<div class="scroll">
+<table>
+  <thead>
+    <tr>
+      <th scope="col">Severity</th><th scope="col">Rule</th>
+      <th scope="col">Entity</th><th scope="col">Summary</th>
+    </tr>
+  </thead>
+  <tbody>
+  {% for f in findings %}
+    <tr>
+      <td><span class="sev sev-{{ f.severity }}">{{ f.severity }}</span></td>
+      <td>{{ f.rule.id }}</td>
+      <td><code>{{ f.entity.id }}</code></td>
+      <td><a href="/findings/{{ f.fingerprint }}">{{ f.summary }}</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty">No findings match this filter.</p>
+{% endif %}
+{% endblock %}

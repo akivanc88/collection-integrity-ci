@@ -60,4 +60,8 @@ def create_app(run_dir: Path) -> FastAPI:
             raise HTTPException(status_code=404, detail="finding not found")
         return JSONResponse(found)
 
+    # Server-rendered HTML pages (dashboard, filterable findings list, detail).
+    from collection_integrity.api.views import register_views
+
+    register_views(app, run)
     return app

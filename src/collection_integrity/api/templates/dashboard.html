@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% set page = 'dashboard' %}
+{% block title %}Dashboard — Collection Integrity CI{% endblock %}
+{% block content %}
+<h1>Scan summary</h1>
+<p class="muted">Run directory: <code>{{ run.run_dir }}</code></p>
+
+<div class="cards" role="list">
+  <div class="card" role="listitem">
+    <div class="n">{{ run.total_findings }}</div>
+    <div class="muted">total findings</div>
+  </div>
+  {% for sev in severities %}
+  <div class="card" role="listitem">
+    <div class="n sev-{{ sev }}">{{ severity_counts.get(sev, 0) }}</div>
+    <div class="muted">{{ sev }}</div>
+  </div>
+  {% endfor %}
+</div>
+
+<h2>Findings by rule</h2>
+{% set by_rule = summary.get('findings_by_rule', {}) %}
+{% if by_rule %}
+<div class="scroll">
+<table>
+  <thead><tr><th scope="col">Rule</th><th scope="col">Count</th></tr></thead>
+  <tbody>
+  {% for rid, n in by_rule.items() | sort %}
+    <tr><td><a href="/findings?rule={{ rid }}">{{ rid }}</a></td><td>{{ n }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="empty">No findings — this run is clean.</p>
+{% endif %}
+
+<h2>Inputs</h2>
+{% set counts = summary.get('input_counts', {}) %}
+<div class="cards" role="list">
+  {% for name, n in counts.items() | sort %}
+  <div class="card" role="listitem"><div class="n">{{ n }}</div><div class="muted">{{ name }}</div></div>
+  {% endfor %}
+</div>
+
+{% if manifest %}
+<h2>Provenance</h2>
+<div class="scroll">
+<table>
+  <tbody>
+    <tr><th scope="row">Software version</th><td>{{ manifest.get('software_version', '—') }}</td></tr>
+    <tr><th scope="row">Command</th><td><code>{{ manifest.get('command', '—') }}</code></td></tr>
+    <tr><th scope="row">Network access used</th><td>{{ manifest.get('network_access_used') }}</td></tr>
+    <tr><th scope="row">AI providers used</th><td>{{ manifest.get('ai_providers_used') }}</td></tr>
+    {% for path, digest in (manifest.get('input_hashes', {}) | dictsort) %}
+    <tr><th scope="row">Input hash</th><td><code>{{ path }}</code><br><span class="muted">{{ digest }}</span></td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

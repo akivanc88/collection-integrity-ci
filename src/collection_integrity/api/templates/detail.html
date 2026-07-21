@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% set page = 'findings' %}
+{% block title %}{{ f.rule.id }} — Collection Integrity CI{% endblock %}
+{% block content %}
+<p class="muted"><a href="/findings">← Back to findings</a></p>
+<h1>
+  <span class="sev sev-{{ f.severity }}">{{ f.severity }}</span>
+  {{ f.rule.id }}
+</h1>
+<p>{{ f.summary }}</p>
+
+<h2>Entity</h2>
+<p><code>{{ f.entity.type }}</code> · <code>{{ f.entity.id }}</code>
+   {% if f.entity.field %}· field <code>{{ f.entity.field }}</code>{% endif %}</p>
+
+{% if f.explanation %}
+<h2>Explanation</h2>
+<p>{{ f.explanation }}</p>
+{% endif %}
+
+<h2>Evidence</h2>
+{% for e in f.evidence %}
+<div class="evidence">
+  {% if e.source_file %}<div><strong>{{ e.source_file }}</strong>{% if e.source_row %} · row {{ e.source_row }}{% endif %}</div>{% endif %}
+  {% if e.field %}<div>{{ e.field }} = <code>{{ e.value }}</code></div>{% else %}<div>{{ e.value }}</div>{% endif %}
+</div>
+{% else %}
+<p class="muted">No evidence items recorded.</p>
+{% endfor %}
+
+{% if f.recommendation %}
+<h2>Recommendation</h2>
+<p>{{ f.recommendation }}</p>
+{% endif %}
+
+<h2>Fingerprint</h2>
+<p><code>{{ f.fingerprint }}</code></p>
+{% endblock %}
