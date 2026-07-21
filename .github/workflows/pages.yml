@@ -1,0 +1,54 @@
+name: Deploy docs to GitHub Pages
+
+# Builds the MkDocs Material showcase and deploys it to GitHub Pages.
+# Uses no secrets — GITHUB_TOKEN with the scoped permissions below is provided automatically.
+# Deployment only runs from the default branch; publishing is gated on enabling Pages for the repo.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site_src/**"
+      - "mkdocs.yml"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment; don't cancel an in-progress production deploy.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.10.4"
+
+      - name: Build the site (strict)
+        run: uv run --group docs mkdocs build --strict
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

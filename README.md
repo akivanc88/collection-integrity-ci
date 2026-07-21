@@ -11,6 +11,13 @@ to resolve.
 Full specification: [`BUILD_BRIEF.md`](./BUILD_BRIEF.md). Build status and what actually works
 right now: [`docs/PROGRESS.md`](./docs/PROGRESS.md).
 
+**Showcase site:** a dual-story MkDocs site (product overview + a "How this was built"
+loop-engineering case study) lives in [`site_src/`](./site_src); build it locally with
+`uv run --group docs mkdocs build`. It is published to GitHub Pages via
+[`.github/workflows/pages.yml`](./.github/workflows/pages.yml) once Pages is enabled for the
+repository. This project was built with [Claude Code](https://claude.com/claude-code) using a
+documented loop-engineering working method (see the case study and `docs/PROGRESS.md`).
+
 **Status: Phases 0–5 complete.** The deterministic engine (15 rules), the JSON/CSV/HTML/SARIF
 report set, baselines, the benchmark, the Met/Cleveland/NGA source adapters, and the local web
 viewer all work offline with no API keys. See [`docs/PROGRESS.md`](./docs/PROGRESS.md) for the

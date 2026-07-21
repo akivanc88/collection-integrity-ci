@@ -17,9 +17,12 @@ It is *not* a CMS, not a rights/legal authority, and does not edit source record
 Phases 0–5 are complete (see `BUILD_BRIEF.md` Section 24 and `docs/PROGRESS.md`): foundation, the
 deterministic engine with all 15 rules, reports/baselines/benchmark, the Met/Cleveland/NGA source
 adapters with bounded sampling, and the local web viewer (`collection-ci serve` — a read-only,
-offline, server-rendered FastAPI app; see `docs/adr/ADR-007-web-viewer.md`). Phase 6 (optional
-ArtiFact/probabilistic experiment, opt-in and disabled by default) and Phase 7 (GitHub Pages
-showcase) have not started; Phase 7 publishing remains approval-gated and must not start early.
+offline, server-rendered FastAPI app; see `docs/adr/ADR-007-web-viewer.md`). The endgame validation
+loops (VL-04/05/07/08/10) are green and the Definition of Done (Section 25) passes
+(`scripts/check_dod.sh`). The Phase 7 GitHub Pages showcase has been **built and verified locally**
+(`site_src/`, `mkdocs.yml`, `.github/workflows/pages.yml`); **publishing remains approval-gated** —
+do not push or enable GitHub Pages without explicit user approval. Phase 6 (optional
+ArtiFact/probabilistic experiment, opt-in and disabled by default) has not started.
 
 Track detailed status in `docs/PROGRESS.md` (source of truth for what actually works).
 

@@ -1,0 +1,56 @@
+site_name: Collection Integrity CI
+site_description: >-
+  A local-first, offline quality-assurance layer for museum and cultural-heritage collection data —
+  and a case study in loop-engineering with Claude Code.
+site_author: Akash Majumder
+# repo_url is intentionally omitted until the repository is published (approval-gated, Phase 7).
+
+docs_dir: site_src
+
+theme:
+  name: material
+  # No externally hosted fonts — consistent with the product's offline, self-contained ethos.
+  font: false
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.integrate
+
+nav:
+  - Home: index.md
+  - How this was built: how-built.md
+  - About the builder: about.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.details
+
+# No analytics, no external CDNs, no secrets — a static, self-contained site.
