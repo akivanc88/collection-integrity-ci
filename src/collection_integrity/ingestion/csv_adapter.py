@@ -29,6 +29,15 @@ def load_objects_from_csv(path: Path, source_name: str) -> list[CollectionObject
     Row numbering is 1-based and counts the header as row 1, so the first data row is row 2 —
     this matches what a spreadsheet application shows a user for that row.
     """
+    try:
+        return _read_objects(path, source_name)
+    except UnicodeDecodeError as exc:
+        raise CsvIngestionError(f"{path}: not valid UTF-8 text: {exc}") from exc
+    except csv.Error as exc:
+        raise CsvIngestionError(f"{path}: malformed CSV: {exc}") from exc
+
+
+def _read_objects(path: Path, source_name: str) -> list[CollectionObject]:
     with path.open(newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         if reader.fieldnames is None or not REQUIRED_COLUMNS.issubset(reader.fieldnames):

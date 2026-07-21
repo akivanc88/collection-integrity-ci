@@ -22,14 +22,24 @@ class IngestionError(ValueError):
 
 
 def read_csv_rows(path: Path) -> list[RawRecord]:
-    with path.open(newline="", encoding="utf-8") as fh:
-        reader = csv.DictReader(fh)
-        if reader.fieldnames is None:
-            raise IngestionError(f"{path}: no header row")
-        records: list[RawRecord] = []
-        for row_number, row in enumerate(reader, start=2):
-            records.append((row_number, {k: (v or "") for k, v in row.items() if k is not None}))
-        return records
+    # Decoding and CSV parsing both happen lazily while iterating, so malformed bytes surface here
+    # rather than at open(). Translate them into IngestionError so the CLI reports invalid input
+    # (exit 2) instead of crashing with an unhandled traceback (VL-05 contract).
+    try:
+        with path.open(newline="", encoding="utf-8") as fh:
+            reader = csv.DictReader(fh)
+            if reader.fieldnames is None:
+                raise IngestionError(f"{path}: no header row")
+            records: list[RawRecord] = []
+            for row_number, row in enumerate(reader, start=2):
+                records.append(
+                    (row_number, {k: (v or "") for k, v in row.items() if k is not None})
+                )
+            return records
+    except UnicodeDecodeError as exc:
+        raise IngestionError(f"{path}: not valid UTF-8 text: {exc}") from exc
+    except csv.Error as exc:
+        raise IngestionError(f"{path}: malformed CSV: {exc}") from exc
 
 
 def read_json_rows(path: Path) -> list[RawRecord]:
