@@ -303,6 +303,39 @@ def benchmark(
     raise typer.Exit(code=0 if result.meets_target else 1)
 
 
+@app.command()
+def serve(
+    run_dir: Annotated[
+        Path, typer.Option(help="A completed scan run directory (findings.json, summary.json).")
+    ],
+    host: Annotated[
+        str, typer.Option(help="Host to bind. Defaults to localhost (local-first).")
+    ] = "127.0.0.1",
+    port: Annotated[int, typer.Option(help="Port to bind.")] = 8000,
+) -> None:
+    """Serve a local, read-only web viewer for a completed scan run.
+
+    The viewer loads the run directory's report artifacts and serves them over localhost with no
+    network calls and only self-contained assets. It never re-runs the engine or modifies the run.
+    """
+    from collection_integrity.api.run_view import RunViewError
+
+    try:
+        from collection_integrity.api.app import create_app
+
+        application = create_app(run_dir)
+    except RunViewError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=2) from exc
+
+    import uvicorn
+
+    console.print(
+        f"Serving [bold]{run_dir}[/bold] at [bold]http://{host}:{port}[/bold]  (Ctrl+C to stop)"
+    )
+    uvicorn.run(application, host=host, port=port, log_level="warning")
+
+
 def _ingest(
     objects_csv: Path | None,
     mapping_path: Path | None,

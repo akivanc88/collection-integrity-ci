@@ -1299,3 +1299,54 @@ none pushed (no git remote).
 after confirming the engine/reports/benchmark/tests are stable (they are). Remaining validation
 loops: VL-04 (broaden adversarial fixtures), VL-05 (Hypothesis fuzz), VL-07 (coverage ratchet),
 VL-08 (README quick start executes), VL-10 (final Definition-of-Done pass).
+
+---
+
+## 2026-07-21 — Loop 29: Phase 5 Slice S — viewer API foundation (serve command + JSON API)
+
+**Slice:** New `/goal` — complete all Phase 5 slices (the local web viewer), each with >=2 validated
+iterations on AI-generated data. Slice S is the API foundation: the `serve` command, a read-only run
+loader, and the JSON API. Phases 1–3 are stable, so the Phase 5 gate is satisfied.
+
+**Design (see `docs/adr/ADR-007-web-viewer.md`):** a server-rendered FastAPI app serving a
+*read-only snapshot* of a completed scan run directory — never a live re-run, never a write. The
+viewer consumes the report format (findings.json/summary.json/run_manifest.json), not the engine's
+models, staying decoupled from the engine. `create_app(run_dir)` loads and validates the run once so
+an invalid directory fails before the server binds a port. Chose server-rendered + query-param
+filtering over a React SPA / HTMX bundle to keep the offline, no-external-assets guarantee trivially
+true (per BUILD_BRIEF Section 7's endorsement of the simpler stack).
+
+**Files created/changed:** `api/__init__.py`, `api/run_view.py` (`RunView` immutable loader +
+`filter_findings`/`get_finding`/`rule_ids`/`severities`), `api/app.py` (`create_app` + JSON API:
+`/api/health`, `/api/summary`, `/api/manifest`, `/api/findings` with severity/rule filters,
+`/api/findings/{fingerprint}`); `cli.py` (`serve --run-dir --host --port`, localhost by default,
+uvicorn); `pyproject.toml` (fastapi + uvicorn runtime, httpx dev, TestClient warning filter);
+`docs/adr/ADR-007-web-viewer.md`. Tests: `tests/integration/test_viewer_api.py`.
+
+**Commands run and results:**
+
+```bash
+uv add fastapi uvicorn ; uv add --dev httpx
+uv run ruff check . ; uv run ruff format --check . ; uv run mypy src   # clean (49 source files)
+uv run pytest -q                                                       # 206 passed
+```
+
+**Iteration 1 (accuracy on AI-generated data):** the test builds a *genuine* run directory by
+running `collection-ci scan` on an AI-generated Met dataset, then exercises every endpoint via
+FastAPI's TestClient. The API faithfully mirrors the engine: health reports 12 findings; `/api/findings`
+returns all 12 most-severe-first; filtering by `severity=critical` returns exactly the 3 CORE001
+duplicates; filtering by `rule=DATE001...` returns exactly its 3; an unknown filter returns 0; the
+detail endpoint round-trips a fingerprint and 404s on an unknown one; the summary/manifest surface
+the offline `network_access_used=false` / no-AI provenance. Loader rejects a missing directory and a
+missing findings.json; the `serve` command exits 2 on an invalid run dir.
+
+**Iteration 2 (VL-06 mutation):** mutation loop on `run_view.py` + `app.py` (8 mutations: severity
+filter inverted, rule filter inverted, get_finding ignores fingerprint, findings sorted least-severe
+first, total_findings hardcoded 0, findings.json not required, endpoint ignores filters, detail never
+404s). **8/8 killed on the first pass, zero survivors.**
+
+Slice S validation approved (API accuracy on AI data + VL-06).
+
+**Next slice:** Slice T — the server-rendered accessible UI (dashboard, filterable findings table,
+finding detail with the evidence chain), self-contained assets, XSS-safe, linking to the standalone
+report.html.
