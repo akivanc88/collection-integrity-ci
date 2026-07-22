@@ -66,9 +66,14 @@ An explicit `--url` streams a bounded sample instead of reading a local file; it
 ## Limitations (honest scope)
 
 - **Ancient / BCE dates.** Met/Cleveland/NGA year fields are integers that occasionally denote BCE
-  or sub-year-1 dates. The shared date parser represents dates as calendar dates (year ≥ 1), so such
-  values are left unset rather than fabricated. The vast majority of records are 4-digit CE years and
-  parse correctly. Broadening the date model is a backlog item, not a silent behavior.
+  or sub-year-1 dates. The shared date parser represents dates as calendar dates (year 1..9999 CE),
+  so BCE (negative) and year-0 values are left unset rather than fabricated. Short CE years
+  (1-3 digits, e.g. year 185) *are* parsed — encyclopedic collections record many ancient works this
+  way, and rejecting them produced large numbers of false SCHEMA001 findings on real data until this
+  was fixed. Broadening the model to represent BCE dates is a backlog item, not a silent behavior.
+- **Byte-order marks.** Several real exports (the Met and Cleveland CSVs, and Excel exports
+  generally) begin with a UTF-8 BOM. Readers decode with `utf-8-sig` so the BOM does not bind to the
+  first column name and silently break a mapping keyed on it.
 - **Deferred entities.** The Met and Cleveland adapters map object-level fields only; their
   multi-valued artist/creator columns are not yet exploded into agents. Maker/agent extraction is
   demonstrated by the relational NGA adapter. Media/rights/location entities for these sources are
