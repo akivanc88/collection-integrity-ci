@@ -1449,3 +1449,36 @@ endgame validation loops on the road to Definition-of-Done and the Phase 7 showc
 **Next:** VL-05 (Hypothesis fuzz / exit-code contract, `tests/property/`), then VL-04 (adversarial
 fixtures + `docs/THREAT_MODEL.md`), VL-08 (README-executes), and finally VL-10 (DoD closure), which
 opens the Phase 7 gate.
+
+---
+
+## 2026-07-21 — Loop: VL-05 fuzz/property contract for `scan`
+
+**Slice:** Bring VL-05 online — a Hypothesis fuzz suite (`tests/property/test_scan_contract_fuzz.py`)
+that feeds arbitrary bytes and adversarial CSV text to `scan --objects-csv` and asserts the CLI's
+documented exit-code contract (BUILD_BRIEF.md Section 13: exit in {0,1,2,3}, never an unhandled
+traceback). Second of the endgame validation loops.
+
+**Iteration 1 (found a real bug):** `uv run pytest tests/property/test_scan_contract_fuzz.py` —
+Hypothesis shrank to `b'\xff\xfe\x00bad'`: the CSV readers open with `encoding="utf-8"` and decode
+lazily while iterating, so undecodable bytes raised an unhandled **`UnicodeDecodeError`** (Click
+reported exit 1 with a traceback) instead of a clean exit 2. The NUL-byte case (`accession_number\n\x00\n`)
+was already handled cleanly. Two paths were vulnerable: `ingestion/readers.py::read_csv_rows` and
+`ingestion/csv_adapter.py::load_objects_from_csv` (the `--objects-csv` path).
+
+**Fix:** wrapped both readers' decode+parse in `try/except (UnicodeDecodeError, csv.Error)` →
+`IngestionError` / `CsvIngestionError`, which the `scan` command already maps to exit 2. Added three
+named regression tests distilled from counterexamples (invalid UTF-8, NUL byte, empty file).
+
+**Iteration 2 (clean):** re-ran the suite — 5 passed. Re-ran with `--hypothesis-seed=random` (fresh
+exploration, 100 examples/property) — 5 passed. Two independent clean iterations after the fix.
+
+**Broader checks:** full suite **219 passed** (+5), coverage **96.48%** (ratchet satisfied), ruff +
+ruff format + mypy all clean.
+
+**Evidence artifacts:** `tests/property/test_scan_contract_fuzz.py` (properties + regression tests),
+fix in `ingestion/readers.py` and `ingestion/csv_adapter.py`. Budget bounded at `max_examples=100`
+per property so CI cost stays fixed (VL-05 done condition).
+
+**Next:** VL-04 (adversarial fixtures + `docs/THREAT_MODEL.md` per Section 18 item), then VL-08
+(README-executes), then VL-10 (DoD closure → Phase 7 gate).
