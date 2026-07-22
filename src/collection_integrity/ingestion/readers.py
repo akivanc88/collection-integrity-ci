@@ -26,7 +26,10 @@ def read_csv_rows(path: Path) -> list[RawRecord]:
     # rather than at open(). Translate them into IngestionError so the CLI reports invalid input
     # (exit 2) instead of crashing with an unhandled traceback (VL-05 contract).
     try:
-        with path.open(newline="", encoding="utf-8") as fh:
+        # utf-8-sig strips a leading byte-order mark if present (Excel and many museum exports emit
+        # one). Without this the BOM binds to the first header name, so a mapping keyed on that
+        # column silently matches nothing — see the BOM regression test.
+        with path.open(newline="", encoding="utf-8-sig") as fh:
             reader = csv.DictReader(fh)
             if reader.fieldnames is None:
                 raise IngestionError(f"{path}: no header row")

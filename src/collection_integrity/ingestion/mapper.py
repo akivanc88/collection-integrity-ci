@@ -265,8 +265,14 @@ def parse_date(raw: str) -> date | None:
         return date.fromisoformat(text)
     except ValueError:
         pass
-    if text.isdigit() and len(text) == 4:
-        return date(int(text), 1, 1)
+    # Bare year. Museum begin/end-date fields store a full year integer, and encyclopedic
+    # collections routinely record ancient/early-CE works with 1-3 digit years (e.g. 185, 50).
+    # Accept any year 1..9999 CE; year 0, BCE (negative), and out-of-range values remain unset
+    # rather than fabricated (a documented limitation; see docs/DATA_SOURCES.md).
+    if text.isdigit():
+        year = int(text)
+        if 1 <= year <= 9999:
+            return date(year, 1, 1)
     return None
 
 

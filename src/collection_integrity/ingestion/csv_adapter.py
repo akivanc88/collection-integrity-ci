@@ -38,7 +38,9 @@ def load_objects_from_csv(path: Path, source_name: str) -> list[CollectionObject
 
 
 def _read_objects(path: Path, source_name: str) -> list[CollectionObject]:
-    with path.open(newline="", encoding="utf-8") as fh:
+    # utf-8-sig strips a leading BOM (common in Excel/museum CSV exports) so the first column name
+    # is not mangled; see the BOM regression test.
+    with path.open(newline="", encoding="utf-8-sig") as fh:
         reader = csv.DictReader(fh)
         if reader.fieldnames is None or not REQUIRED_COLUMNS.issubset(reader.fieldnames):
             missing = REQUIRED_COLUMNS - set(reader.fieldnames or [])
