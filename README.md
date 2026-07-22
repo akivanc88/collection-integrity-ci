@@ -20,8 +20,7 @@ The site has a product overview, a page on how the project was built, and a page
 against real Met and Cleveland open data. Source is in [`site_src/`](./site_src); build it locally
 with `uv run --group docs mkdocs build`, or read it live at the link above. It's published to GitHub
 Pages by [`.github/workflows/pages.yml`](./.github/workflows/pages.yml). The project was built with
-[Claude Code](https://claude.com/claude-code) using a documented working method (see
-`docs/PROGRESS.md`).
+an AI coding agent using a documented, evidence-first working method (see `docs/PROGRESS.md`).
 
 ## Status
 

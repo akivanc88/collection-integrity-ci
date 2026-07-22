@@ -1,9 +1,8 @@
 # How this was built
 
-This project was also an experiment in building software with an AI coding agent
-([Claude Code](https://claude.com/claude-code)) under a disciplined working method, rather than
-ad-hoc prompting. This page ties that method to actual artifacts in the repository, so none of it
-has to be taken on faith.
+This project was also an experiment in building software with an AI coding agent under a disciplined
+working method, rather than ad-hoc prompting. This page ties that method to actual artifacts in the
+repository, so none of it has to be taken on faith.
 
 ## The working method
 
@@ -16,7 +15,7 @@ One reviewable slice per commit. Nothing was called done until a command or test
 output looked at. The build log records more than 40 of these loop iterations, each with the commands
 that ran and what came back.
 
-!!! quote "From the project's own guardrails (`CLAUDE.md`)"
+!!! quote "From the project's own contributor guardrails"
     "Never claim a feature works without having run the relevant command/test and inspected the
     output. Never weaken or delete a test to make a build pass. Diagnose failures instead."
 

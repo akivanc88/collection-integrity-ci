@@ -24,8 +24,8 @@ and they're enforced, not just stated:
 - It never edits source data. Reading is read-only.
 - It needs no paid AI service to do its job. The core product runs offline.
 
-Those lines show up as architecture rules, as safety constraints in `CLAUDE.md`, and as tests that
-fail if a boundary gets crossed.
+Those lines show up as architecture rules, as safety constraints in the project's contributor guide,
+and as tests that fail if a boundary gets crossed.
 
 ## Success is measured
 
@@ -53,5 +53,5 @@ story this project is meant to tell.
 ---
 
 !!! info "Colophon"
-    Built with [Claude Code](https://claude.com/claude-code) using a documented working method. The
-    full build log is in `docs/PROGRESS.md`.
+    Built with an AI coding agent using a documented working method. The full build log is in
+    `docs/PROGRESS.md`.
