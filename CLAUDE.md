@@ -19,10 +19,12 @@ deterministic engine with all 15 rules, reports/baselines/benchmark, the Met/Cle
 adapters with bounded sampling, and the local web viewer (`collection-ci serve` — a read-only,
 offline, server-rendered FastAPI app; see `docs/adr/ADR-007-web-viewer.md`). The endgame validation
 loops (VL-04/05/07/08/10) are green and the Definition of Done (Section 25) passes
-(`scripts/check_dod.sh`). The Phase 7 GitHub Pages showcase has been **built and verified locally**
-(`site_src/`, `mkdocs.yml`, `.github/workflows/pages.yml`); **publishing remains approval-gated** —
-do not push or enable GitHub Pages without explicit user approval. Phase 6 (optional
-ArtiFact/probabilistic experiment, opt-in and disabled by default) has not started.
+(`scripts/check_dod.sh`). The Phase 7 GitHub Pages showcase is **published** (approved 2026-07-21) at
+https://akivanc88.github.io/collection-integrity-ci/ — the repo is public at
+`github.com/akivanc88/collection-integrity-ci`, `main` is the default branch, and CI + Pages deploy
+are green. Any further push/deploy still follows normal review; do not force-push or re-scope the
+project without explicit user approval. Phase 6 (optional ArtiFact/probabilistic experiment, opt-in
+and disabled by default) has not started (deliberately skipped as off the showcase critical path).
 
 Track detailed status in `docs/PROGRESS.md` (source of truth for what actually works).
 

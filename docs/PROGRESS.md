@@ -1615,3 +1615,24 @@ data; strict build re-run clean; full suite + lint/format/mypy green.
 
 **Next:** stop for explicit user approval before any push / GitHub Pages enablement (Phase 7
 publishing step).
+
+---
+
+## 2026-07-22 — Loop: Phase 7 published to GitHub Pages (approved)
+
+**Slice:** With explicit user approval, publish the project and the Phase 7 showcase.
+
+**What happened:**
+- Created public repo `github.com/akivanc88/collection-integrity-ci`; `main` is the default branch.
+- Established `main` at the Phase-5 base (`cf686a9`), then landed each of the six endgame/Phase-7
+  slices as its **own PR** (#1 VL-07, #2 VL-05, #3 VL-04, #4 VL-08, #5 VL-10, #6 Phase 7), merged in
+  order. Verified remote `main`'s tree is byte-identical to the validated local build.
+- CI is **green** on merged `main` (`uv sync --locked`, lint, format, mypy, 234 tests + coverage
+  ratchet, build, sample scan, benchmark).
+- Enabled GitHub Pages (Actions source) and deployed via `.github/workflows/pages.yml` — build
+  (`mkdocs build --strict`) and deploy jobs both succeeded.
+- **Live and verified:** https://akivanc88.github.io/collection-integrity-ci/ (home, `/how-built/`,
+  `/about/`) all return HTTP 200.
+
+This PR wires the live URL into the README, adds `site_url`/`repo_url` to `mkdocs.yml`, and records
+the publish. The approval-gated Phase 7 publishing step is now complete.
