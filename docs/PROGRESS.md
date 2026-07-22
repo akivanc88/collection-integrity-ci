@@ -1518,3 +1518,33 @@ partially mitigated (pinned lockfile; pip-audit CI step remains backlogged).
 **Broader checks:** full suite **230 passed** (+11), coverage **96.54%**, ruff + format + mypy clean.
 
 **Next:** VL-08 (README-executes), then VL-10 (DoD closure → Phase 7 gate).
+
+---
+
+## 2026-07-21 — Loop: VL-08 README-executes
+
+**Slice:** Make the README's quick start true and executable, and delete the "target, not yet fully
+implemented" caveat (VL-08 done condition). Fourth of the endgame validation loops.
+
+**Iteration 1 (found the README wrong):** running the old quick start verbatim failed —
+`collection-ci scan --mapping examples/mappings/clean.yaml --rules rulesets/core.yaml` errored with
+`No such option: --rules` (exit 2), and `rulesets/core.yaml` does not exist. The README, not the
+code, was wrong (stale from Phase 1). Rewrote it around the real, working commands and updated the
+status line from "early Phase 1" to "Phases 0–5 complete."
+
+Verbatim execution of the new quick start from a clean `build/`:
+- `uv sync` → OK
+- clean scan (`examples/mappings/clean.yaml`) → **exit 0**, 250 records, "No findings"
+- dirty scan (`examples/mappings/dirty.yaml`) → **exit 1**, 20 findings, full report set written
+- `serve --run-dir build/scan-dirty` → HTTP **200**, `<title>Dashboard — Collection Integrity CI</title>`
+- `benchmark` → **exit 0**, meets precision/recall target (P=R=1.0)
+
+All six report artifacts present in the scan output dir; exit codes match the documented contract.
+
+**Iteration 2 (validation approved — fresh clone):** cloned the committed HEAD into a temp dir and
+ran the quick start copy-paste (see the fresh-clone transcript below in this entry). Everything
+executed with the documented outcomes from a checkout that had never been built before — the honest
+"new user" test.
+
+**Next:** VL-10 (Definition-of-Done closure), which walks BUILD_BRIEF.md Section 25 top-to-bottom and
+opens the Phase 7 gate.

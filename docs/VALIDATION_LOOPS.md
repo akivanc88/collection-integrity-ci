@@ -26,7 +26,7 @@ on a later phase's features).
 | VL-05 | Fuzz/property contract | Crash-freedom, exit-code contract | active (Hypothesis fuzz on `scan`; found+fixed a UTF-8 decode crash) |
 | VL-06 | Test-strength (mutation) | The test suite itself | active (found+closed 13 real gaps to date (Slices K, L clean on first pass)) |
 | VL-07 | Coverage ratchet | Test breadth over time | active (`fail_under=95` in pyproject; coverage step in ci.yml; baseline 96.5%) |
-| VL-08 | README-executes | Honest documentation | partial |
+| VL-08 | README-executes | Honest documentation | active (quick start runs verbatim, incl. serve HTTP 200; "not yet implemented" caveat removed) |
 | VL-09 | Progress audit | Recorded claims vs. reality | active |
 | VL-10 | Definition-of-Done closure | Release readiness | pending (endgame) |
 
