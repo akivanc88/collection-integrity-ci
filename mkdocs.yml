@@ -1,6 +1,6 @@
 site_name: Collection Integrity CI
 site_description: >-
-  A local-first, offline quality-assurance layer for museum and cultural-heritage collection data —
+  A local-first, offline quality-assurance layer for museum and cultural-heritage collection data,
   and a case study in loop-engineering with Claude Code.
 site_author: Akash Majumder
 site_url: https://akivanc88.github.io/collection-integrity-ci/
@@ -11,7 +11,7 @@ docs_dir: site_src
 
 theme:
   name: material
-  # No externally hosted fonts — consistent with the product's offline, self-contained ethos.
+  # No externally hosted fonts, to stay consistent with the product's offline, self-contained ethos.
   font: false
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -56,4 +56,4 @@ markdown_extensions:
           format: !!python/name:pymdownx.superfences.fence_code_format
   - pymdownx.details
 
-# No analytics, no external CDNs, no secrets — a static, self-contained site.
+# No analytics, no external CDNs, no secrets. A static, self-contained site.
