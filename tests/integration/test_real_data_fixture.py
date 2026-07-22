@@ -69,8 +69,8 @@ def test_real_cleveland_fixture_reproduces_inverted_date_findings(tmp_path: Path
 
 
 def test_page_claim_matches_fixture() -> None:
-    # The page states "10 Cleveland objects" — keep that number tied to the fixture.
+    # The page states "10 Cleveland objects"; keep that number tied to the fixture.
     assert len(EXPECTED_INVERTED_ACCESSIONS) == 10
     page = PAGE.read_text(encoding="utf-8")
-    assert "**10 Cleveland objects**" in page
-    assert "11 genuine, verifiable catalog errors" in page  # 10 Cleveland + 1 Met
+    assert "10 Cleveland objects" in page
+    assert "inverted-date errors in Cleveland's data and one in the Met's" in page
