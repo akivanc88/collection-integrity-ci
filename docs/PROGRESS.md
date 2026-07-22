@@ -1482,3 +1482,39 @@ per property so CI cost stays fixed (VL-05 done condition).
 
 **Next:** VL-04 (adversarial fixtures + `docs/THREAT_MODEL.md` per Section 18 item), then VL-08
 (README-executes), then VL-10 (DoD closure → Phase 7 gate).
+
+---
+
+## 2026-07-21 — Loop: VL-04 threat-model adversarial coverage
+
+**Slice:** Create `docs/THREAT_MODEL.md` and drive VL-04 to full coverage — every BUILD_BRIEF.md
+Section 18 item mapped to either an adversarial fixture + passing test or a documented rationale for
+non-applicability. Third of the endgame validation loops.
+
+**Two real hardening fixes found while building the fixtures:**
+- **Item 1 (formula injection):** `findings.csv` echoed source-controlled values (entity ids,
+  summaries, evidence) straight into cells, so a source cell like `=cmd|'/c calc'!A1` would execute
+  when the CSV is opened in Excel/Sheets. Added `reporting/csv_report.py::_neutralize` (OWASP
+  guidance: prefix cells leading with `= + - @ TAB CR` with an apostrophe).
+- **Item 5 (decompression bomb):** `engine/media_files.py` caught `UnidentifiedImageError/OSError/
+  ValueError` but not Pillow's `DecompressionBombError` (it subclasses `Exception`), so a crafted
+  image would crash the reader. Added it to the caught tuple.
+
+**Iteration 1:** wrote `tests/integration/test_adversarial.py` (11 tests) + fixtures. First run
+surfaced three test-design issues (not product bugs): the 300 KB DoS cell was *correctly* rejected
+by the new csv field-size guard (exit 2, not a crash); a Windows `..\..\` case isn't traversal on
+POSIX; the formula-injection assertion needed the duplicated accession itself to be the formula so
+it reaches a top-level cell. Corrected the tests/fixture accordingly.
+
+**Iteration 2 (validation approved):** all 11 adversarial tests pass. VL-06 mutation check on the two
+fixes — (a) neutralizer reduced to identity → `test_formula_injection_...` **fails**; (b) dropped
+`DecompressionBombError` from the catch → `test_decompression_bomb_image_handled` **fails** with the
+uncaught error. Both mutants killed; fixes reverted.
+
+**Coverage documented:** `docs/THREAT_MODEL.md` table — items 1,2,3,4,5,7,9,10,11,12 mitigated with
+tests; 13 documented non-goal; 6,8,14 not-applicable-by-feature-set with revisit conditions; 15
+partially mitigated (pinned lockfile; pip-audit CI step remains backlogged).
+
+**Broader checks:** full suite **230 passed** (+11), coverage **96.54%**, ruff + format + mypy clean.
+
+**Next:** VL-08 (README-executes), then VL-10 (DoD closure → Phase 7 gate).

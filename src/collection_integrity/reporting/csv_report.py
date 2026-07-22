@@ -13,6 +13,19 @@ from pathlib import Path
 
 from collection_integrity.engine.findings import Finding
 
+# Cells a spreadsheet treats as a formula if they lead a value (OWASP CSV-injection guidance).
+# Source data flows into findings (entity ids, summaries, evidence), so a malicious cell like
+# `=cmd|'/c calc'!A1` could execute when findings.csv is opened in Excel/Sheets. We neutralize by
+# prefixing such values with an apostrophe so they display literally and are never evaluated.
+_FORMULA_TRIGGERS = ("=", "+", "-", "@", "\t", "\r")
+
+
+def _neutralize(value: str) -> str:
+    if value and value[0] in _FORMULA_TRIGGERS:
+        return "'" + value
+    return value
+
+
 COLUMNS = [
     "fingerprint",
     "rule_id",
@@ -36,22 +49,22 @@ def write_findings_csv(findings: list[Finding], path: Path) -> None:
         writer = csv.DictWriter(fh, fieldnames=COLUMNS)
         writer.writeheader()
         for finding in sorted(findings, key=lambda f: f.fingerprint):
-            writer.writerow(
-                {
-                    "fingerprint": finding.fingerprint,
-                    "rule_id": finding.rule.id,
-                    "rule_version": finding.rule.version,
-                    "severity": finding.severity,
-                    "verification_type": finding.verification_type,
-                    "status": finding.status,
-                    "entity_type": finding.entity.type,
-                    "entity_id": finding.entity.id,
-                    "entity_field": finding.entity.field or "",
-                    "summary": finding.summary,
-                    "recommendation": finding.recommendation,
-                    "evidence_json": json.dumps(
-                        [e.model_dump(mode="json") for e in finding.evidence], sort_keys=True
-                    ),
-                    "created_at": finding.created_at.isoformat(),
-                }
-            )
+            row = {
+                "fingerprint": finding.fingerprint,
+                "rule_id": finding.rule.id,
+                "rule_version": finding.rule.version,
+                "severity": finding.severity,
+                "verification_type": finding.verification_type,
+                "status": finding.status,
+                "entity_type": finding.entity.type,
+                "entity_id": finding.entity.id,
+                "entity_field": finding.entity.field or "",
+                "summary": finding.summary,
+                "recommendation": finding.recommendation,
+                "evidence_json": json.dumps(
+                    [e.model_dump(mode="json") for e in finding.evidence], sort_keys=True
+                ),
+                "created_at": finding.created_at.isoformat(),
+            }
+            # Neutralize every cell against spreadsheet formula injection before writing.
+            writer.writerow({k: _neutralize(v) for k, v in row.items()})

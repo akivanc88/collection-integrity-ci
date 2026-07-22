@@ -22,7 +22,7 @@ on a later phase's features).
 | VL-01 | Benchmark closure | Rule-engine correctness | partial (14 rules P=R=1.0; `benchmark` command scores 5) |
 | VL-02 | Fingerprint determinism | Finding identity/baselines | active (all rules, incl. shuffled input) |
 | VL-03 | Baseline round-trip | Regression behavior | active (e2e: zero-new / one-new / one-resolved) |
-| VL-04 | Threat-model adversarial | Robustness to hostile input | partial (media path-traversal refusal tested) |
+| VL-04 | Threat-model adversarial | Robustness to hostile input | active (all 15 Section 18 items in `docs/THREAT_MODEL.md`; fixtures+tests for the applicable ones) |
 | VL-05 | Fuzz/property contract | Crash-freedom, exit-code contract | active (Hypothesis fuzz on `scan`; found+fixed a UTF-8 decode crash) |
 | VL-06 | Test-strength (mutation) | The test suite itself | active (found+closed 13 real gaps to date (Slices K, L clean on first pass)) |
 | VL-07 | Coverage ratchet | Test breadth over time | active (`fail_under=95` in pyproject; coverage step in ci.yml; baseline 96.5%) |
