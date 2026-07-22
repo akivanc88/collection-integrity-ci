@@ -36,6 +36,9 @@ dev = [
     "pytest-cov>=5.0",
     "hypothesis>=6.100",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+]
 
 [tool.ruff]
 line-length = 100

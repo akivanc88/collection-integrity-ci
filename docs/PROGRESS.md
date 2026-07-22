@@ -1576,3 +1576,42 @@ open. Publishing remains approval-gated — the showcase site will be built and 
 **Next:** Phase 7 — build the MkDocs Material dual-story showcase (product home, "How this was
 built" loop-engineering case study, "About the builder"), add the gh-pages workflow (no secrets),
 verify `mkdocs build` locally, then stop for approval to publish.
+
+---
+
+## 2026-07-21 — Loop: Phase 7 dual-story showcase (built locally; publish approval-gated)
+
+**Slice:** With the Definition of Done met (VL-10), build the Phase 7 MkDocs Material showcase —
+product home, "How this was built" loop-engineering case study, and "About the builder" — plus the
+GitHub Pages deploy workflow and a README pointer. Built and verified **locally only**; no push, no
+Pages enablement (both remain gated on explicit user approval per BUILD_BRIEF.md Phase 7 and the
+CLAUDE.md safety constraints).
+
+**Built:**
+- `mkdocs.yml` (Material theme, `docs_dir: site_src`, `font: false` to stay consistent with the
+  product's no-external-assets ethos, Mermaid via superfences, light/dark toggle, no analytics/no
+  secrets).
+- `site_src/index.md` (product story + real dirty-scan console excerpt + benchmark table +
+  Mermaid architecture diagram + honest limitations).
+- `site_src/how-built.md` (the loop-engineering case study, with three *real* loop wins: the VL-05
+  UTF-8 fuzz crash, the VL-04 CSV formula-injection vector, and VL-06 mutation verification).
+- `site_src/about.md` (technical-PM positioning grounded in PRD authorship, non-goals, measured
+  success, and threat-model thinking).
+- `.github/workflows/pages.yml` (build `mkdocs build --strict` → `upload-pages-artifact` →
+  `deploy-pages`; scoped `GITHUB_TOKEN` permissions, **no secrets**).
+- README pointer to the showcase + the Claude Code loop-engineering note.
+
+**Every number on the site is sourced from generated data, and a test enforces it:**
+`tests/integration/test_showcase_accuracy.py` re-derives each quantitative claim (15 rules; 5 scored
+benchmark rules on 60 objects with 20 injected errors at F1 = 1.00; the 250-record / 20-finding
+dirty scan; 40+ loop entries; 10 validation loops; 18 DoD checks) from live code and fresh
+`benchmark`/`scan` runs, so the showcase cannot drift from the truth.
+
+**Iteration 1 (build):** `mkdocs build --strict` → exit 0, zero link/nav warnings; `site/` built
+with `index.html`, `how-built/`, `about/`, `404.html`. Mermaid diagram present (`class="mermaid"`).
+
+**Iteration 2 (validation approved):** `test_showcase_accuracy.py` passes against freshly generated
+data; strict build re-run clean; full suite + lint/format/mypy green.
+
+**Next:** stop for explicit user approval before any push / GitHub Pages enablement (Phase 7
+publishing step).
