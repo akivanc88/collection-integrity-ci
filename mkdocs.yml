@@ -36,6 +36,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Validated on real data: real-data.md
   - How this was built: how-built.md
   - About the builder: about.md
 
