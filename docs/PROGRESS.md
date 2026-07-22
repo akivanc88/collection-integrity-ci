@@ -1417,3 +1417,35 @@ the viewer is read-only. Commits c57e449..(this loop), none pushed (no git remot
 (Phase 6), then the approval-gated GitHub Pages showcase (Phase 7). Remaining validation loops: VL-04
 (broaden adversarial fixtures), VL-05 (Hypothesis fuzz), VL-07 (coverage ratchet in CI), VL-08
 (README quick start executes), VL-10 (final Definition-of-Done pass).
+
+---
+
+## 2026-07-21 — Loop: VL-07 coverage ratchet wired
+
+**Slice:** Wire coverage.py with an enforced floor into CI (VL-07), the first of the
+endgame validation loops on the road to Definition-of-Done and the Phase 7 showcase. Phase 6
+(optional probabilistic experiment) is being skipped as off the critical path for the showcase goal.
+
+**Commands run:**
+- `uv add --group dev 'pytest-cov>=5.0'` — added `pytest-cov` (+ `coverage`) to the dev group.
+- `uv run pytest --cov=collection_integrity --cov-report=term-missing -q` — baseline: **1949
+  statements, 64 missed, 96.72% total** (214 tests passing).
+- `uv run pytest -q --cov-fail-under=99` → exit **1** (`FAIL Required test coverage of 99% not
+  reached`); `uv run pytest -q` → exit **0** (`Required test coverage of 95.0% reached`). Confirms
+  the ratchet both passes at baseline and *bites* below the floor.
+- `uv run ruff check .` / `ruff format --check .` / `mypy src` — all clean.
+
+**Changes:**
+- `pyproject.toml`: `addopts` runs coverage on every `pytest`; `[tool.coverage.report] fail_under =
+  95` sets the ratchet floor (baseline 96.72%, 95% leaves a small margin; the floor only ever rises).
+- `.github/workflows/ci.yml`: Tests step now enforces coverage and uploads `coverage.xml` as an
+  artifact.
+- `.gitignore`: added `coverage.xml`.
+- `docs/BACKLOG.md`: marked the VL-07 item done.
+
+**VL-07 status:** evidence artifacts in place (coverage step in `ci.yml`, `fail_under` in
+`pyproject.toml`). The ratchet is an ongoing automation, not a finish-line goal.
+
+**Next:** VL-05 (Hypothesis fuzz / exit-code contract, `tests/property/`), then VL-04 (adversarial
+fixtures + `docs/THREAT_MODEL.md`), VL-08 (README-executes), and finally VL-10 (DoD closure), which
+opens the Phase 7 gate.

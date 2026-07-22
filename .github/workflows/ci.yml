@@ -31,8 +31,17 @@ jobs:
       - name: Type check (mypy)
         run: uv run mypy src
 
-      - name: Tests
-        run: uv run pytest
+      - name: Tests (with coverage ratchet)
+        # Coverage flags come from pyproject [tool.pytest.ini_options] addopts;
+        # the fail_under floor in [tool.coverage.report] fails the build if coverage erodes (VL-07).
+        run: uv run pytest --cov-report=xml
+
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-xml
+          path: coverage.xml
 
       - name: Build package
         run: uv build
