@@ -45,7 +45,7 @@ def test_home_benchmark_table_matches_generated_metrics(tmp_path: Path) -> None:
 
     home = _read("index.md")
     assert "60 synthetic objects, 20 injected errors" in home
-    assert "**1.00**" in home  # precision/recall/F1 claim
+    assert "1.00 on every scored rule" in home  # precision/recall/F1 claim
 
 
 def test_home_console_block_matches_dirty_scan(tmp_path: Path) -> None:
@@ -76,10 +76,10 @@ def test_home_console_block_matches_dirty_scan(tmp_path: Path) -> None:
 
 def test_how_built_loop_and_check_counts_are_honest() -> None:
     how = _read("how-built.md")
-    # "40+ such loop iterations" — the log must actually contain at least 40 loop entries.
+    # "more than 40 of these loop iterations" — the log must actually contain at least 40 entries.
     loops = (REPO / "docs" / "PROGRESS.md").read_text(encoding="utf-8").count("\n## 2026")
-    assert loops >= 40, f"PROGRESS has {loops} loop entries; site claims 40+"
-    assert "40+ such loop iterations" in how
+    assert loops >= 40, f"PROGRESS has {loops} loop entries; site claims more than 40"
+    assert "more than 40 of these loop iterations" in how
 
     # "ten validation loops" — VL-01..VL-10 are defined.
     vlt = (REPO / "docs" / "VALIDATION_LOOPS.md").read_text(encoding="utf-8")

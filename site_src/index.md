@@ -1,37 +1,37 @@
 # Collection Integrity CI
 
-> A local-first, offline quality-assurance layer for museum and cultural-heritage collection data.
+> A local-first, offline quality check for museum collection data.
 
-Before a museum migrates its collection to a new system, publishes it online, or shares it with an
-aggregator, someone has to answer an uncomfortable question: **does the data actually agree with
-itself?** Are two objects claiming the same accession number? Does a record marked "publish" point
-to rights that forbid publication? Does an object sit in two "current" locations at once?
+Before a museum moves its collection to a new system, puts it online, or hands it to an aggregator,
+someone has to ask an awkward question: does the data actually agree with itself? Are two objects
+claiming the same accession number? Is a record marked for publication pointing at rights that
+forbid it? Does an object sit in two "current" locations at once?
 
-Collection Integrity CI answers that question deterministically, on a registrar's own laptop, with
-**no cloud service, no API keys, and no data ever leaving the machine.** It ingests a CSV/JSON
-export, runs a transparent rule engine, and produces evidence-backed findings a human can act on.
+Collection Integrity CI answers that on a registrar's own laptop. Nothing goes to the cloud, no API
+key is required, and no data leaves the machine. It reads a CSV or JSON export, runs a rule engine
+over it, and produces findings a person can act on, each one backed by the evidence behind it.
 
 !!! note "What it is not"
-    Not a collection management system, not a rights or legal authority, and it never edits source
-    records. Ingestion is strictly read-only. It is a *checking* layer that sits in front of a
-    migration, publication, or export — the same role a linter or CI check plays for source code.
+    It isn't a collection management system, and it isn't a rights or legal authority. It never edits
+    source records; reading is strictly read-only. Think of it as the check that runs before a
+    migration, publication, or export, the same way a linter runs before you ship code.
 
 ## What it does
 
-- **15 deterministic rules** across identity, references, rights, locations, dates, schema,
-  controlled vocabularies, and media — each a documented, versioned check with no network or AI
-  calls.
-- **Evidence-backed findings** in four formats: JSON, CSV, a self-contained HTML report, and
-  **SARIF 2.1.0** so results show up natively in GitHub code-scanning.
-- **Baselines and `--only-new`**, so a CI gate can fail on *new* regressions while tolerating a
-  known backlog.
-- **A local web viewer** (`collection-ci serve`) — read-only, offline, server-rendered.
-- **Museum source adapters** for the Met, Cleveland, and NGA open-data exports, with bounded
-  sampling so you never accidentally download a full dataset.
+- Runs 15 deterministic rules covering identity, references, rights, locations, dates, schema,
+  controlled vocabularies, and media. Each one is a documented, versioned check with no network or
+  AI calls behind it.
+- Writes findings in four formats: JSON, CSV, a self-contained HTML report, and SARIF 2.1.0, so
+  results show up natively in GitHub code-scanning.
+- Supports baselines and `--only-new`, so a CI job can fail on new regressions while ignoring a
+  backlog you already know about.
+- Ships a local web viewer (`collection-ci serve`) that is read-only and offline.
+- Includes adapters for the Met, Cleveland, and NGA open-data exports, with bounded sampling so you
+  never pull a whole dataset by accident.
 
 ## See it run
 
-A scan of a deliberately "dirty" example export surfaces its problems and exits non-zero — the
+Scanning a deliberately dirty example export shows the problems and exits non-zero, which is the
 signal a CI pipeline needs:
 
 ```console
@@ -53,23 +53,23 @@ $ echo $?
 1
 ```
 
-Each finding carries the offending entity, the source rows, a remediation, and a stable
-**fingerprint** — the identity that makes baselines and "only new" possible.
+Every finding names the object it's about, the source rows involved, a suggested fix, and a stable
+fingerprint. That fingerprint is the identity baselines and "only new" rely on.
 
 ## How good are the rules?
 
-Correctness is not asserted, it is *measured*. A deterministic benchmark injects labeled errors into
-a synthetic dataset and scores each rule against ground truth:
+The rules aren't assumed to work; they're measured. A benchmark injects labeled errors into a
+synthetic dataset and scores each rule against the known answers.
 
 | Metric | Result |
 |--------|--------|
 | Object-level rules scored | 5 (on 60 synthetic objects, 20 injected errors) |
-| Precision | **1.00** on every scored rule |
-| Recall | **1.00** on every scored rule |
-| F1 | **1.00** on every scored rule |
+| Precision | 1.00 on every scored rule |
+| Recall | 1.00 on every scored rule |
+| F1 | 1.00 on every scored rule |
 
-Run it yourself with `collection-ci benchmark`. The metric is regenerated on every CI run, so this
-page can never drift from the truth.
+Run `collection-ci benchmark` and you'll get the same numbers. They're regenerated on every CI run,
+so this page can't quietly fall out of date.
 
 ## Architecture
 
@@ -87,22 +87,23 @@ flowchart LR
     E --> K[Baseline compare<br/>--only-new]
 ```
 
-Each layer has a hard boundary: ingestion never writes, rules never call the network, formatters
-never mutate findings. Those boundaries are enforced by tests, not convention.
+The layers have hard boundaries. Ingestion never writes, rules never touch the network, and
+formatters never change findings. Tests enforce those boundaries rather than leaving them to good
+intentions.
 
-## Honest limitations
+## What it can't do
 
-- The rules check **internal consistency**, not real-world truth. A clean report means the data
-  agrees with itself, not that every date or attribution is correct.
-- Rights findings are **policy-consistency warnings, not legal advice.** The tool is deliberately
-  not a rights authority.
-- Only a subset of rules is currently exercised by the automated benchmark; the rest are covered by
-  unit and integration tests. See [`docs/FUTURE_SCOPE.md`](https://github.com/) in the repository
-  for the full scope boundary.
-- Any future AI-assisted rule is an **opt-in, disabled-by-default** adapter; the core product works
-  entirely offline.
+- The rules check that the data agrees with itself, not that it's true. A clean report means the
+  records are internally consistent, not that every date or attribution is correct.
+- Rights findings are consistency warnings, not legal advice. The tool is not a rights authority,
+  on purpose.
+- The benchmark currently exercises a subset of the rules; the rest are covered by unit and
+  integration tests. The repository's `docs/FUTURE_SCOPE.md` has the full scope boundary.
+- Any future AI-assisted rule would be opt-in and off by default. The core product runs entirely
+  offline.
 
 ---
 
-Curious *how* this was built? The **[loop-engineering case study](how-built.md)** walks through the
-working method — and the evidence in the repository that backs every claim on this page.
+If you want to see how it holds up on real museum data, the
+[real-data validation](real-data.md) page has the results. For how the project itself was built,
+there's the [build case study](how-built.md).
