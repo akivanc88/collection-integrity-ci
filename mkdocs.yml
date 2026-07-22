@@ -3,7 +3,9 @@ site_description: >-
   A local-first, offline quality-assurance layer for museum and cultural-heritage collection data —
   and a case study in loop-engineering with Claude Code.
 site_author: Akash Majumder
-# repo_url is intentionally omitted until the repository is published (approval-gated, Phase 7).
+site_url: https://akivanc88.github.io/collection-integrity-ci/
+repo_url: https://github.com/akivanc88/collection-integrity-ci
+repo_name: akivanc88/collection-integrity-ci
 
 docs_dir: site_src
 
