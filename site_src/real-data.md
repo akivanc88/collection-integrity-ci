@@ -28,26 +28,33 @@ invalid. It now accepts any year from 1 to 9999 CE.
 
 That's the whole reason to test against real data. It surfaces what a clean synthetic suite can't.
 
-## What it actually caught
+## What it caught, and what happened next
 
 After the fixes, the scanner flagged 10 Cleveland objects (and one Met object) whose production end
-year comes before the start year. These are all checkable against the museums' own published data:
+year came before the start year. Some were transposed or mistyped, and a couple had a year that had
+clearly lost a digit (186, 188).
 
-| Cleveland accession | Title | earliest | latest |
-|---------------------|-------|:--------:|:------:|
-| 1917.425 | Storage Basket | 1985 | 1905 |
-| 1924.650 | Peasant Leaning on His Doorway | 1648 | 1558 |
-| 1926.479 | Cornelis Claesz Anslo, Mennonite Preacher | 1641 | 1631 |
-| 1929.894 | The Watering Hole (Horses Bathing) | 1906 | 1903 |
-| 1932.417 | Morning Glories | 1921 | 1911 |
-| 1922.523 | The Horrors of War: What Courage! | 1810 | 186 (truncated) |
-| 1915.403 | Buckle (Tang dynasty) | 918 | 907 |
-| 1917.601 | Figures from the Four Continents | 1755 | 1665 |
+These were reported to the Cleveland Museum of Art on their open-data issue tracker
+([issue #14](https://github.com/ClevelandMuseumArt/openaccess/issues/14)). A curator confirmed all
+ten as real errors, corrected them, and their collection data analyst found and fixed a few more. A
+new data file was pushed the same week. All ten corrections are now live in Cleveland's API, and the
+table below shows the flagged value next to what it was corrected to:
 
-Each one is a genuine inconsistency: an end year earlier than the start, or a year that's clearly
-been truncated (186, 14). You'd never spot these scrolling a spreadsheet of 20,000 rows, but the
-scanner finds them in seconds and shows the object, the values, and a fix. These exact rows are
-committed as a test fixture, so the claim is checked on every CI run and anyone can reproduce it.
+| Cleveland accession | Title | flagged (earliest / latest) | corrected to |
+|---------------------|-------|:---------------------------:|:------------:|
+| 1917.425 | Storage Basket | 1985 / 1905 | 1885 / 1905 |
+| 1924.650 | Peasant Leaning on His Doorway | 1648 / 1558 | 1648 / 1658 |
+| 1926.479 | Cornelis Claesz Anslo, Mennonite Preacher | 1641 / 1631 | 1641 / 1641 |
+| 1929.894 | The Watering Hole (Horses Bathing) | 1906 / 1903 | 1906 / 1913 |
+| 1932.417 | Morning Glories | 1921 / 1911 | 1911 / 1921 |
+| 1922.523 | The Horrors of War: What Courage! | 1810 / 186 | 1810 / 1863 |
+| 1915.403 | Buckle (Tang dynasty) | 918 / 907 | 618 / 907 |
+| 1917.601 | Figures from the Four Continents | 1755 / 1665 | 1755 / 1765 |
+
+You'd never spot these scrolling a spreadsheet of 20,000 rows, but the scanner found them in seconds
+and showed the object, the values, and a suggested fix. The exact rows as originally flagged are
+committed as a dated test fixture, so the finding is reproducible on every CI run even now that
+Cleveland's live data is corrected.
 
 ## What it correctly left alone
 
@@ -59,9 +66,9 @@ above. Being clear about that difference is what separates an honest tool from a
 ## What this adds up to
 
 It works on real, name-brand museum data, offline, in seconds, with no setup. It caught 10 real
-inverted-date errors in Cleveland's data and one in the Met's, the kind a registrar wants fixed
-before publishing. It also found the identity data clean, with no duplicate or missing accession
-numbers.
+inverted-date errors in Cleveland's data and one in the Met's, a curator confirmed every one, and
+they were corrected in the published dataset. It also found the identity data clean, with no
+duplicate or missing accession numbers.
 
 One caveat worth repeating: the raw finding counts are dominated by BCE dates, which are a known
 limitation and not errors. Lead with the real inverted-date errors, not the big number.
