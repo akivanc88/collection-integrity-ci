@@ -35,10 +35,20 @@ year came before the start year. Some were transposed or mistyped, and a couple 
 clearly lost a digit (186, 188).
 
 These were reported to the Cleveland Museum of Art on their open-data issue tracker
-([issue #14](https://github.com/ClevelandMuseumArt/openaccess/issues/14)). A curator confirmed all
+([issue #14](https://github.com/ClevelandMuseumArt/openaccess/issues/14)). The museum confirmed all
 ten as real errors, corrected them, and their collection data analyst found and fixed a few more. A
-new data file was pushed the same week. All ten corrections are now live in Cleveland's API, and the
-table below shows the flagged value next to what it was corrected to:
+new data file was pushed the same week.
+
+!!! quote "The Cleveland Museum of Art responded the next day"
+    "Nice catch! These are indeed erroneous records and have been corrected and an update pushed.
+    Our collection data analyst found a few more and she's fixing them and we'll do another push.
+    Thanks for alerting us to this and thanks for using our collection!"
+
+    Cleveland Museum of Art, on
+    [open-data issue #14](https://github.com/ClevelandMuseumArt/openaccess/issues/14)
+
+All ten corrections are now live in Cleveland's API, and the table below shows the flagged value
+next to what it was corrected to:
 
 | Cleveland accession | Title | flagged (earliest / latest) | corrected to |
 |---------------------|-------|:---------------------------:|:------------:|
@@ -66,7 +76,7 @@ above. Being clear about that difference is what separates an honest tool from a
 ## What this adds up to
 
 It works on real, name-brand museum data, offline, in seconds, with no setup. It caught 10 real
-inverted-date errors in Cleveland's data and one in the Met's, a curator confirmed every one, and
+inverted-date errors in Cleveland's data and one in the Met's, the museum confirmed every one, and
 they were corrected in the published dataset. It also found the identity data clean, with no
 duplicate or missing accession numbers.
 
