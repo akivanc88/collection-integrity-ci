@@ -74,3 +74,6 @@ def test_page_claim_matches_fixture() -> None:
     page = PAGE.read_text(encoding="utf-8")
     assert "10 Cleveland objects" in page
     assert "inverted-date errors in Cleveland's data and one in the Met's" in page
+    # The museum's acknowledgement is quoted verbatim as a testimonial and linked to the issue.
+    assert "These are indeed erroneous records and have been corrected" in page
+    assert "openaccess/issues/14" in page
