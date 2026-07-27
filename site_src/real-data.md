@@ -47,6 +47,10 @@ new data file was pushed the same week.
     Cleveland Museum of Art, on
     [open-data issue #14](https://github.com/ClevelandMuseumArt/openaccess/issues/14)
 
+![The Cleveland Museum of Art's two replies on GitHub issue #14: a collaborator confirms the reported
+records were erroneous and have been corrected and pushed, notes their data analyst found and fixed a
+few more, and follows up that all records are fixed and a new file has been pushed.](assets/cleveland-issue-14.png)
+
 All ten corrections are now live in Cleveland's API, and the table below shows the flagged value
 next to what it was corrected to:
 

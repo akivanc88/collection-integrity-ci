@@ -11,6 +11,12 @@ Collection Integrity CI answers that on a registrar's own laptop. Nothing goes t
 key is required, and no data leaves the machine. It reads a CSV or JSON export, runs a rule engine
 over it, and produces findings a person can act on, each one backed by the evidence behind it.
 
+!!! quote "It has already fixed real data at a major museum"
+    "Nice catch! These are indeed erroneous records and have been corrected and an update pushed."
+
+    The Cleveland Museum of Art, after the scanner found ten date errors in their open data.
+    [See what happened](real-data.md).
+
 !!! note "What it is not"
     It isn't a collection management system, and it isn't a rights or legal authority. It never edits
     source records; reading is strictly read-only. Think of it as the check that runs before a
